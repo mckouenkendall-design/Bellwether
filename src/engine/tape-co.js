@@ -521,6 +521,7 @@
      *   2. The books. Profit a company keeps (or cash it burns) reaches its balance sheet once a quarter, on report
      *      day. The price leans into that gradually over the quarter, so report day only moves on the surprise.
      * Both wash out to nothing over a full quarter: long-term returns are unchanged. */
+    var LEAN_MAX = 0.08;
     function divAcc(co, d) { // dollars per share of the next dividend already in the price
       if (co.dT1 == null) return 0;
       if (co.deal && !co.dealSeen) { co.dealSeen = 1; if (!(co.divPend > d)) { co.dT0 = d; co.dA0 = 0; co.dT1 = ctx.N + 1; co.dA1 = 0; } }
@@ -601,9 +602,12 @@
         // kept profit is valued the way the rest of the business is (so it scales with the mood of the moment); a dividend is plain cash
         var basePx = Math.max(1, Math.round(p * 100)), moodX = co.fv > 0 && !co.deal ? p / co.fv : 1;
         if (co.bookDay === d && !co.deal) { // report day: whatever the running estimate got wrong is carried forward and fades over the next quarter, instead of landing today
-          co.resC = clamp((co.leanRet || 0) - co.bookStep * moodX, -0.1 * p, 0.1 * p); co.resT = d;
+          co.resC = clamp((co.leanRet || 0) - co.bookStep * moodX, -LEAN_MAX * p, LEAN_MAX * p); co.resT = d;
         }
-        co.leanRet = co.deal ? 0 : retAcc(co, d) * moodX + (co.resT != null ? co.resC * Math.max(0, 1 - (d - co.resT) / 60) : 0);
+        // The lean is kept small next to the price. When a company's shares are worth little beside its debts, a quarter's
+        // profit or a one-off charge can be huge per share while the share price barely answers to it, and an unbounded
+        // lean would swing the price for nothing and snap back on report day.
+        co.leanRet = co.deal ? 0 : clamp(retAcc(co, d) * moodX + (co.resT != null ? co.resC * Math.max(0, 1 - (d - co.resT) / 60) : 0), -LEAN_MAX * p, LEAN_MAX * p);
         // Under about a dollar a share one cent is a big step, so the lean is faded out there rather than let rounding turn it into a pattern.
         var lean = Math.round((divAcc(co, d) + co.leanRet) * 100 * clamp((basePx - 50) / 150, 0, 1));
         co.pc[d] = Math.max(1, basePx + Math.max(lean, -Math.floor(basePx / 2)));

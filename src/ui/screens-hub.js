@@ -25,7 +25,7 @@
         h('div', { cls: 'rowf', style: 'margin-top:14px;flex-wrap:wrap' }, bellsEl(function () { return m.bells + ' Bells'; }), h('span', { cls: 'tag', text: (m.name ? m.name + ', ' : '') + (title ? title.name : 'Rookie') }))), cv)));
     drawBell(0);
     var body = h('div', { cls: 'hubbody' }); el.appendChild(body);
-    if (G.lostRun) { body.appendChild(h('p', { cls: 'note bad', text: 'The game was updated and your unfinished run could not be carried over. Your Bells, unlocks and collection are safe.' })); G.lostRun = false; }
+    if (G.lostRun) { body.appendChild(h('p', { cls: 'note bad', text: 'Your unfinished run could not be carried over. Either the game was updated or the saved run was damaged. Your Bells, unlocks and collection are safe.' })); G.lostRun = false; }
     if (!App.ui.storageOK) body.appendChild(h('p', { cls: 'note bad', text: 'This browser is blocking saved data, so progress will be lost when you close the page. Private or incognito windows do this.' }));
     if (G.run && !G.run.s.done) {
       body.appendChild(h('button', { cls: 'btn pri', style: 'min-height:62px;flex-direction:column;gap:0', tap: function () { App.toRun(App.ui.tab); if (!BW.Audio.ready()) BW.Audio.unlock(); } }, h('span', { text: 'Continue your run' }), h('span', { style: 'font-size:12.5px;font-weight:600;opacity:.8', text: G.scen.name + ', ' + f.dateLong(G.run.rel()) })));
@@ -230,7 +230,7 @@
             var own = !!m.unlocked[l.id], locked = l.req && !m.unlocked[l.req];
             if (locked && !own) { var rq = BW.LEGACY_BY[l.req]; if (rq.req && !m.unlocked[rq.req]) return; }
             var right = own ? h('span', { cls: 'tag up', text: 'Owned' }) : locked ? h('span', { cls: 'tag', text: 'After ' + BW.LEGACY_BY[l.req].name }) :
-              h('button', { cls: 'btn sm ' + (m.bells >= l.cost ? 'pri' : ''), disabled: m.bells < l.cost, tap: function () {
+              h('button', { cls: 'btn sm ' + (m.bells >= l.cost ? 'pri' : ''), disabled: m.bells < l.cost, 'aria-label': 'Unlock ' + l.name + ' for ' + l.cost + ' Bells', tap: function () {
                 m.bells -= l.cost; m.unlocked[l.id] = 1; App.saveSoon(); BW.Audio.play('unlock'); BW.Audio.buzz(15); U.toast(l.name + ' unlocked', { kind: 'brass' });
                 if (BW.BADGES && !m.badges.alltools && BW.LEGACY.every(function (x) { return x.kind !== 'tool' || m.unlocked[x.id]; })) { m.badges.alltools = { t: Date.now() }; m.bells += 8; U.toast('Badge earned: Fully Equipped', { kind: 'brass' }); }
                 reg.render(); if (G.run) App.rechrome(); } }, bellIcon(), String(l.cost));

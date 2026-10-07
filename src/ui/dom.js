@@ -45,6 +45,9 @@
     return set;
   }
   U.tapGuardMs = 300;
+  // Nothing inside `root` can be pressed for this long. Used when the buttons under your finger are about to be swapped for others.
+  var hush = { until: 0, root: null };
+  U.quiet = function (ms, root) { hush = { until: nowMs() + ms, root: root }; };
   U.tap = function (el, fn) {
     el._born = nowMs();
     el.addEventListener('click', function (e) {
@@ -52,7 +55,7 @@
       var t = nowMs(), sig = sigOf(el), gap = t - lastTap.t;
       if (sig === lastTap.sig && gap < (el === lastTap.el ? 70 : 250)) return;
       if (gap < U.tapGuardMs && el._born >= lastTap.t0 && lastTap.seen && !lastTap.seen[sig]) { lastTap.t = t; return; }
-      if (t < quietUntil || (el.closest && el.closest('.closing'))) return;
+      if (t < quietUntil || (t < hush.until && hush.root && hush.root.contains(el)) || (el.closest && el.closest('.closing'))) return;
       lastTap = { t: t, t0: t, sig: sig, el: el, seen: onScreen() };
       if (BW.Audio) BW.Audio.unlock();
       fn(e);
@@ -68,6 +71,7 @@
       else if (/^\d+,\d{1,2}$/.test(t)) t = t.replace(',', '.');
       else t = t.replace(/,/g, '');
     }
+    if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); // 1.250 and 1.250.000: nobody types three decimals of a dollar
     if (!/^\d*\.?\d*$/.test(t)) return 0;
     var v = Math.round(parseFloat(t) * 100);
     return v > 0 && isFinite(v) ? Math.min(v, 1e14) : 0;
@@ -156,10 +160,11 @@
   // history itself, so it can never navigate away by accident. The only cost: after closing panels by hand, the
   // same number of Back presses do nothing before the next one leaves.
   var guards = 0;
-  try { if (window.history.state && window.history.state.bwPanel) guards = 1; } catch (e) { /* no history here */ } // reloaded while sitting on a spare step: reuse it
-  function histGuard() { while (guards < stack.length) { try { window.history.pushState({ bwPanel: 1 }, ''); guards++; } catch (e) { return; } } }
+  function guardsHere() { try { var st = window.history.state; return st && st.bwPanel > 0 ? st.bwPanel : 0; } catch (e) { return 0; } }
+  guards = guardsHere(); // after a reload: carry on from the spare steps that are already there
+  function histGuard() { while (guards < stack.length) { try { window.history.pushState({ bwPanel: guards + 1 }, ''); guards++; } catch (e) { return; } } }
   if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('popstate', function () {
-    guards = Math.max(0, guards - 1);
+    guards = guardsHere();
     if (stack.length) stack[stack.length - 1].close();
   });
   U.sheet = function (opts) {
@@ -272,14 +277,23 @@
     }
     return map[id] || '?';
   }
+  var tkrCodes = {};
+  function tkrCode(tape, a) { // two letters from the ticker that no other company in this world uses
+    var key = tape.dest.id + ':' + tape.seed, map = tkrCodes[key];
+    if (!map) {
+      tkrCodes = {}; map = tkrCodes[key] = {}; var used = {};
+      tape.companies.forEach(function (c) { var t = tape.assets[c.id].tkr, code = '', k; for (k = 1; k < t.length; k++) { code = t.charAt(0) + t.charAt(k); if (!used[code]) break; } used[code] = 1; map[c.id] = code; });
+    }
+    return map[a.id] || a.tkr.slice(0, 2);
+  }
   U.logo = function (a, size) {
-    var tape = BW.G && BW.G.tape, hue = 210, shape = '', txt = a.tkr.slice(0, 2), sat = 48, lum = 36;
+    var tape = BW.G && BW.G.tape, hue = 210, shape = '', txt = a.kind === 'stock' && tape ? tkrCode(tape, a) : a.tkr.slice(0, 2), sat = 48, lum = 36;
     if (a.kind === 'stock') {
       var s = tape.sectors.filter(function (x) { return x.id === a.sector; })[0];
       var k = BW.hashStr(a.id); hue = (s ? s.hue : 200) + (k % 31) - 15; shape = LOGO_SHAPES[k % 4];
     } else if (a.kind === 'fund') { hue = 44; sat = 70; lum = 38; shape = 'round'; txt = a.tkr.slice(0, 1); }
     else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; txt = secCode(tape, a.sector); }
-    else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.slice(1, 3); }
+    else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.charAt(1) + a.tkr.charAt(3).toLowerCase(); }
     else if (a.kind === 'cmdty') { hue = { gold: 45, oil: 20, copper: 18, wheat: 52 }[a.id] || 30; sat = a.id === 'oil' ? 12 : 62; lum = a.id === 'oil' ? 22 : 40; shape = 'leaf'; var w = a.name.split(' '); txt = w.length > 1 ? w[0].charAt(0) + w[1].charAt(0) : a.name.slice(0, 2); }
     else if (a.kind === 'crypto') { hue = 285; sat = 60; lum = 48; shape = 'round'; txt = a.tkr.slice(0, 1); }
     return U.h('span', { cls: 'logo ' + shape + (size ? ' ' + size : ''), style: 'background:hsl(' + hue + ' ' + sat + '% ' + lum + '%)', text: txt });

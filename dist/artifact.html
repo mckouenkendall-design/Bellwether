@@ -135,6 +135,7 @@ button.item:active { background: var(--bg3); }
 #transport .pp { flex: none; width: 54px; height: 44px; border-radius: 13px; background: var(--brass); color: var(--brassInk); display: grid; place-items: center; }
 #transport .pp svg { width: 20px; height: 20px; }
 #transport .step { flex: none; height: 44px; padding: 0 10px; border-radius: 13px; background: var(--bg3); font-weight: 700; font-size: 13px; color: var(--ink2); }
+#transport .step:disabled { opacity: .32; }
 #transport .spd { flex: 1; display: flex; gap: 4px; background: var(--bg); border-radius: 13px; padding: 3px; min-width: 0; }
 #transport .spd button { flex: 1; height: 44px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: var(--ink3); font-variant-numeric: tabular-nums; }
 #transport .spd button.on { background: var(--bg3); color: var(--ink); }
@@ -1430,6 +1431,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
      *   2. The books. Profit a company keeps (or cash it burns) reaches its balance sheet once a quarter, on report
      *      day. The price leans into that gradually over the quarter, so report day only moves on the surprise.
      * Both wash out to nothing over a full quarter: long-term returns are unchanged. */
+    var LEAN_MAX = 0.08;
     function divAcc(co, d) { // dollars per share of the next dividend already in the price
       if (co.dT1 == null) return 0;
       if (co.deal && !co.dealSeen) { co.dealSeen = 1; if (!(co.divPend > d)) { co.dT0 = d; co.dA0 = 0; co.dT1 = ctx.N + 1; co.dA1 = 0; } }
@@ -1510,9 +1512,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         // kept profit is valued the way the rest of the business is (so it scales with the mood of the moment); a dividend is plain cash
         var basePx = Math.max(1, Math.round(p * 100)), moodX = co.fv > 0 && !co.deal ? p / co.fv : 1;
         if (co.bookDay === d && !co.deal) { // report day: whatever the running estimate got wrong is carried forward and fades over the next quarter, instead of landing today
-          co.resC = clamp((co.leanRet || 0) - co.bookStep * moodX, -0.1 * p, 0.1 * p); co.resT = d;
+          co.resC = clamp((co.leanRet || 0) - co.bookStep * moodX, -LEAN_MAX * p, LEAN_MAX * p); co.resT = d;
         }
-        co.leanRet = co.deal ? 0 : retAcc(co, d) * moodX + (co.resT != null ? co.resC * Math.max(0, 1 - (d - co.resT) / 60) : 0);
+        // The lean is kept small next to the price. When a company's shares are worth little beside its debts, a quarter's
+        // profit or a one-off charge can be huge per share while the share price barely answers to it, and an unbounded
+        // lean would swing the price for nothing and snap back on report day.
+        co.leanRet = co.deal ? 0 : clamp(retAcc(co, d) * moodX + (co.resT != null ? co.resC * Math.max(0, 1 - (d - co.resT) / 60) : 0), -LEAN_MAX * p, LEAN_MAX * p);
         // Under about a dollar a share one cent is a big step, so the lean is faded out there rather than let rounding turn it into a pattern.
         var lean = Math.round((divAcc(co, d) + co.leanRet) * 100 * clamp((basePx - 50) / 150, 0, 1));
         co.pc[d] = Math.max(1, basePx + Math.max(lean, -Math.floor(basePx / 2)));
@@ -3119,7 +3124,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   BW.parseCode = function (code) {
     code = String(code || '').toUpperCase().replace(/[\u2010-\u2015\u2212]/g, '-'); // phones like to turn a hyphen into a long dash
-    var m = /(?:^|[^A-Z0-9])BW(\d)([A-Z])([A-Z])[-\s]?([A-Z2-9]{6})(?![A-Z0-9])/.exec(code); // works on a bare code, a share link, or a whole pasted message
+    var m = /(?:^|[^A-Z0-9])BW(\d)([A-Z])([A-Z])[-_\s]{0,3}([A-Z2-9]{6})(?![A-Z0-9])/.exec(code); // works on a bare code, a share link, or a whole pasted message
     if (!m) return { ok: false, why: 'That does not look like a challenge code. They look like BW1CE-K7QM2X.' };
     if (+m[1] !== BW.ENGINE_VERSION) return { ok: false, why: 'That code is from a different version of the game. Everyone needs to be on the same version.' };
     var scen = BW.SCENARIOS.filter(function (s) { return s.code === m[2]; })[0];
@@ -3337,6 +3342,9 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return set;
   }
   U.tapGuardMs = 300;
+  // Nothing inside `root` can be pressed for this long. Used when the buttons under your finger are about to be swapped for others.
+  var hush = { until: 0, root: null };
+  U.quiet = function (ms, root) { hush = { until: nowMs() + ms, root: root }; };
   U.tap = function (el, fn) {
     el._born = nowMs();
     el.addEventListener('click', function (e) {
@@ -3344,7 +3352,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       var t = nowMs(), sig = sigOf(el), gap = t - lastTap.t;
       if (sig === lastTap.sig && gap < (el === lastTap.el ? 70 : 250)) return;
       if (gap < U.tapGuardMs && el._born >= lastTap.t0 && lastTap.seen && !lastTap.seen[sig]) { lastTap.t = t; return; }
-      if (t < quietUntil || (el.closest && el.closest('.closing'))) return;
+      if (t < quietUntil || (t < hush.until && hush.root && hush.root.contains(el)) || (el.closest && el.closest('.closing'))) return;
       lastTap = { t: t, t0: t, sig: sig, el: el, seen: onScreen() };
       if (BW.Audio) BW.Audio.unlock();
       fn(e);
@@ -3360,6 +3368,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       else if (/^\d+,\d{1,2}$/.test(t)) t = t.replace(',', '.');
       else t = t.replace(/,/g, '');
     }
+    if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); // 1.250 and 1.250.000: nobody types three decimals of a dollar
     if (!/^\d*\.?\d*$/.test(t)) return 0;
     var v = Math.round(parseFloat(t) * 100);
     return v > 0 && isFinite(v) ? Math.min(v, 1e14) : 0;
@@ -3448,10 +3457,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   // history itself, so it can never navigate away by accident. The only cost: after closing panels by hand, the
   // same number of Back presses do nothing before the next one leaves.
   var guards = 0;
-  try { if (window.history.state && window.history.state.bwPanel) guards = 1; } catch (e) { /* no history here */ } // reloaded while sitting on a spare step: reuse it
-  function histGuard() { while (guards < stack.length) { try { window.history.pushState({ bwPanel: 1 }, ''); guards++; } catch (e) { return; } } }
+  function guardsHere() { try { var st = window.history.state; return st && st.bwPanel > 0 ? st.bwPanel : 0; } catch (e) { return 0; } }
+  guards = guardsHere(); // after a reload: carry on from the spare steps that are already there
+  function histGuard() { while (guards < stack.length) { try { window.history.pushState({ bwPanel: guards + 1 }, ''); guards++; } catch (e) { return; } } }
   if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('popstate', function () {
-    guards = Math.max(0, guards - 1);
+    guards = guardsHere();
     if (stack.length) stack[stack.length - 1].close();
   });
   U.sheet = function (opts) {
@@ -3564,14 +3574,23 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     }
     return map[id] || '?';
   }
+  var tkrCodes = {};
+  function tkrCode(tape, a) { // two letters from the ticker that no other company in this world uses
+    var key = tape.dest.id + ':' + tape.seed, map = tkrCodes[key];
+    if (!map) {
+      tkrCodes = {}; map = tkrCodes[key] = {}; var used = {};
+      tape.companies.forEach(function (c) { var t = tape.assets[c.id].tkr, code = '', k; for (k = 1; k < t.length; k++) { code = t.charAt(0) + t.charAt(k); if (!used[code]) break; } used[code] = 1; map[c.id] = code; });
+    }
+    return map[a.id] || a.tkr.slice(0, 2);
+  }
   U.logo = function (a, size) {
-    var tape = BW.G && BW.G.tape, hue = 210, shape = '', txt = a.tkr.slice(0, 2), sat = 48, lum = 36;
+    var tape = BW.G && BW.G.tape, hue = 210, shape = '', txt = a.kind === 'stock' && tape ? tkrCode(tape, a) : a.tkr.slice(0, 2), sat = 48, lum = 36;
     if (a.kind === 'stock') {
       var s = tape.sectors.filter(function (x) { return x.id === a.sector; })[0];
       var k = BW.hashStr(a.id); hue = (s ? s.hue : 200) + (k % 31) - 15; shape = LOGO_SHAPES[k % 4];
     } else if (a.kind === 'fund') { hue = 44; sat = 70; lum = 38; shape = 'round'; txt = a.tkr.slice(0, 1); }
     else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; txt = secCode(tape, a.sector); }
-    else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.slice(1, 3); }
+    else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.charAt(1) + a.tkr.charAt(3).toLowerCase(); }
     else if (a.kind === 'cmdty') { hue = { gold: 45, oil: 20, copper: 18, wheat: 52 }[a.id] || 30; sat = a.id === 'oil' ? 12 : 62; lum = a.id === 'oil' ? 22 : 40; shape = 'leaf'; var w = a.name.split(' '); txt = w.length > 1 ? w[0].charAt(0) + w[1].charAt(0) : a.name.slice(0, 2); }
     else if (a.kind === 'crypto') { hue = 285; sat = 60; lum = 48; shape = 'round'; txt = a.tkr.slice(0, 1); }
     return U.h('span', { cls: 'logo ' + shape + (size ? ' ' + size : ''), style: 'background:hsl(' + hue + ' ' + sat + '% ' + lum + '%)', text: txt });
@@ -4234,7 +4253,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       list.forEach(function (sp, i) { var b = h('button', { text: sp[1], tap: function () { ui.speed = sp[0]; BW.Audio.play('speed', i); if (ui.paused) App.setPaused(false); ui.dirty = true; } }); sb.push([sp[0], b]); spd.appendChild(b); });
       var lastP = null, lastS = null;
       U.on(function () {
-        if (ui.paused !== lastP) { lastP = ui.paused; pp.innerHTML = U.icon(ui.paused ? 'play' : 'pause'); el.transport.className = ui.paused ? 'paused' : ''; step.hidden = !ui.paused; }
+        if (ui.paused !== lastP) { lastP = ui.paused; pp.innerHTML = U.icon(ui.paused ? 'play' : 'pause'); el.transport.className = ui.paused ? 'paused' : ''; step.disabled = !ui.paused; } // stays in place while running (greyed out), so the speed buttons never move under a finger
         if (ui.speed !== lastS) { lastS = ui.speed; sb.forEach(function (x) { x[1].className = x[0] === ui.speed ? 'on' : ''; }); }
       });
       U.add(el.transport, [pp, step, spd]);
@@ -4844,7 +4863,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         var list = h('div', { cls: 'list' });
         s.orders.forEach(function (o) { var a = G.tape.assets[o.id];
           list.appendChild(h('div', { cls: 'item' }, U.logo(a, 'sm'), h('span', { cls: 'grow' }, h('div', { cls: 't1', text: (o.side === 'buy' ? 'Buy ' : 'Sell ') + a.tkr + (o.side === 'buy' ? ' ' + f.m0(o.amt) : ' ' + Math.round(o.frac * 100) + '%') }), h('div', { cls: 't2', text: (o.side === 'buy' ? (o.kind === 'limit' ? 'if it drops to ' : 'if it rises to ') : (o.kind === 'limit' ? 'if it rises to ' : 'if it falls to ')) + f.px(o.px) })),
-            h('button', { cls: 'btn sm ghost', text: 'Cancel', tap: function () { r.orderCancel(o.n); App.touch(); reg.render(); } }))); });
+            h('button', { cls: 'btn sm ghost', text: 'Cancel', 'aria-label': 'Cancel order ' + o.n, tap: function () { r.orderCancel(o.n); App.touch(); reg.render(); } }))); });
         host.appendChild(list);
       });
     } });
@@ -5424,7 +5443,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         h('div', { cls: 'rowf', style: 'margin-top:14px;flex-wrap:wrap' }, bellsEl(function () { return m.bells + ' Bells'; }), h('span', { cls: 'tag', text: (m.name ? m.name + ', ' : '') + (title ? title.name : 'Rookie') }))), cv)));
     drawBell(0);
     var body = h('div', { cls: 'hubbody' }); el.appendChild(body);
-    if (G.lostRun) { body.appendChild(h('p', { cls: 'note bad', text: 'The game was updated and your unfinished run could not be carried over. Your Bells, unlocks and collection are safe.' })); G.lostRun = false; }
+    if (G.lostRun) { body.appendChild(h('p', { cls: 'note bad', text: 'Your unfinished run could not be carried over. Either the game was updated or the saved run was damaged. Your Bells, unlocks and collection are safe.' })); G.lostRun = false; }
     if (!App.ui.storageOK) body.appendChild(h('p', { cls: 'note bad', text: 'This browser is blocking saved data, so progress will be lost when you close the page. Private or incognito windows do this.' }));
     if (G.run && !G.run.s.done) {
       body.appendChild(h('button', { cls: 'btn pri', style: 'min-height:62px;flex-direction:column;gap:0', tap: function () { App.toRun(App.ui.tab); if (!BW.Audio.ready()) BW.Audio.unlock(); } }, h('span', { text: 'Continue your run' }), h('span', { style: 'font-size:12.5px;font-weight:600;opacity:.8', text: G.scen.name + ', ' + f.dateLong(G.run.rel()) })));
@@ -5629,7 +5648,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
             var own = !!m.unlocked[l.id], locked = l.req && !m.unlocked[l.req];
             if (locked && !own) { var rq = BW.LEGACY_BY[l.req]; if (rq.req && !m.unlocked[rq.req]) return; }
             var right = own ? h('span', { cls: 'tag up', text: 'Owned' }) : locked ? h('span', { cls: 'tag', text: 'After ' + BW.LEGACY_BY[l.req].name }) :
-              h('button', { cls: 'btn sm ' + (m.bells >= l.cost ? 'pri' : ''), disabled: m.bells < l.cost, tap: function () {
+              h('button', { cls: 'btn sm ' + (m.bells >= l.cost ? 'pri' : ''), disabled: m.bells < l.cost, 'aria-label': 'Unlock ' + l.name + ' for ' + l.cost + ' Bells', tap: function () {
                 m.bells -= l.cost; m.unlocked[l.id] = 1; App.saveSoon(); BW.Audio.play('unlock'); BW.Audio.buzz(15); U.toast(l.name + ' unlocked', { kind: 'brass' });
                 if (BW.BADGES && !m.badges.alltools && BW.LEGACY.every(function (x) { return x.kind !== 'tool' || m.unlocked[x.id]; })) { m.badges.alltools = { t: Date.now() }; m.bells += 8; U.toast('Badge earned: Fully Equipped', { kind: 'brass' }); }
                 reg.render(); if (G.run) App.rechrome(); } }, bellIcon(), String(l.cost));
@@ -6029,12 +6048,13 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         if (extra.children.length) ctr.appendChild(extra);
       } else {
         ctr.appendChild(betBar(paint));
-        var deal = h('button', { cls: 'btn pri', text: 'Deal for ' + f.m0(bet), tap: start }); deal.disabled = bet > s.cash; ctr.appendChild(deal);
+        var deal = h('button', { cls: 'btn pri', text: 'Deal for ' + f.m0(bet), 'aria-label': 'Deal', tap: start }); deal.disabled = bet > s.cash; ctr.appendChild(deal);
         if (bet > s.cash) ctr.appendChild(h('p', { cls: 'down', style: 'font-size:13px;text-align:center', text: 'You do not have that much cash.' }));
       }
     }
     function start() {
       if (st.phase === 'play' || bet > s.cash || !stake(bet, 0.005)) return;
+      U.quiet(520, ctr);
       st.hands = [{ cards: [draw(), draw()], bet: bet }]; st.dealer = [draw(), draw()]; st.cur = 0; st.phase = 'play'; st.msg = '';
       var pv = K.bjValue(st.hands[0].cards).total, dv = K.bjValue(st.dealer).total;
       if (pv === 21 || dv === 21) { st.natural = pv === 21; finish(true); return; }
@@ -6052,7 +6072,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       st.hands.forEach(function (x) { var pv = K.bjValue(x.cards).total, pBJ = x.cards.length === 2 && pv === 21 && !x.split; tot += x.bet;
         if (pv > 21) return; if (pBJ && !dBJ) { pay += Math.round(x.bet * 2.5); return; } if (dBJ && !pBJ) return;
         if (dv > 21 || pv > dv) pay += x.bet * 2; else if (pv === dv) pay += x.bet; });
-      payOut(tot, pay);
+      payOut(tot, pay); U.quiet(520, ctr);
       var net = pay - tot; st.phase = 'done';
       st.msg = net > 0 ? (pay === Math.round(tot * 2.5) && st.hands.length === 1 && st.hands[0].cards.length === 2 ? 'Blackjack! ' : 'You win ') + f.m0(net) : net === 0 ? 'Push. Your bet comes back.' : (dBJ ? 'Dealer has blackjack. ' : '') + 'You lose ' + f.m0(-net);
       BW.Audio.play(net > 0 ? 'good' : net === 0 ? 'tick' : 'bad'); paint();
@@ -6157,15 +6177,15 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       st.cards.forEach(function (c, i) { var el = cardEl(c); el.style.marginLeft = '0'; if (st.held[i]) el.classList.add('held'); if (st.phase === 'hold') { el.setAttribute('role', 'button'); el.setAttribute('aria-label', 'Hold card ' + (i + 1)); U.tap(el, function () { st.held[i] = !st.held[i]; BW.Audio.play('tick'); paint(); }); } row.appendChild(el); });
       felt.appendChild(row); felt.appendChild(h('div', { cls: 'msg', text: st.msg }));
       if (st.phase === 'hold') { ctr.appendChild(h('p', { cls: 'mute', style: 'font-size:13px;text-align:center', text: 'Tap the cards you want to keep.' })); ctr.appendChild(h('button', { cls: 'btn pri', text: 'Draw', tap: drawStep })); }
-      else { ctr.appendChild(betBar(paint)); var d = h('button', { cls: 'btn pri', text: 'Deal for ' + f.m0(bet), tap: deal }); d.disabled = bet > s.cash; ctr.appendChild(d); }
+      else { ctr.appendChild(betBar(paint)); var d = h('button', { cls: 'btn pri', text: 'Deal for ' + f.m0(bet), 'aria-label': 'Deal', tap: deal }); d.disabled = bet > s.cash; ctr.appendChild(d); }
     }
-    function deal() { if (st.phase === 'hold' || bet > s.cash || !stake(bet, 0.0046)) return; st.deck = shoe(1); st.cards = [0, 1, 2, 3, 4].map(function () { BW.Audio.play('card'); return st.deck.pop(); }); st.held = [false, false, false, false, false]; st.stake = bet; st.phase = 'hold'; var r0 = K.pokerRank(st.cards); st.msg = r0 >= 0 ? 'You already have ' + K.PAYS[r0][0].toLowerCase() + '.' : ''; paint(); }
-    function drawStep() { st.cards = st.cards.map(function (c, i) { if (st.held[i]) return c; BW.Audio.play('card'); return st.deck.pop(); }); var rk = K.pokerRank(st.cards), pay = rk >= 0 ? st.stake * K.PAYS[rk][1] : 0; payOut(st.stake, pay); st.phase = 'bet'; st.held = [false, false, false, false, false];
+    function deal() { if (st.phase === 'hold' || bet > s.cash || !stake(bet, 0.0046)) return; st.deck = shoe(1); st.cards = [0, 1, 2, 3, 4].map(function () { BW.Audio.play('card'); return st.deck.pop(); }); st.held = [false, false, false, false, false]; st.stake = bet; st.phase = 'hold'; U.quiet(420, ctr); var r0 = K.pokerRank(st.cards); st.msg = r0 >= 0 ? 'You already have ' + K.PAYS[r0][0].toLowerCase() + '.' : ''; paint(); }
+    function drawStep() { st.cards = st.cards.map(function (c, i) { if (st.held[i]) return c; BW.Audio.play('card'); return st.deck.pop(); }); var rk = K.pokerRank(st.cards), pay = rk >= 0 ? st.stake * K.PAYS[rk][1] : 0; payOut(st.stake, pay); U.quiet(520, ctr); st.phase = 'bet'; st.held = [false, false, false, false, false];
       st.msg = rk >= 0 ? K.PAYS[rk][0] + '. ' + (pay > st.stake ? 'You win ' + f.m0(pay - st.stake) : 'Your bet comes back.') : 'Nothing. You lose ' + f.m0(st.stake); BW.Audio.play(rk >= 0 ? (rk <= 3 ? 'jackpot' : rk === 8 ? 'tick' : 'good') : 'bad'); paint(); }
     paint();
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
-window.BW_BUILD="2026-10-07 09:19";
+window.BW_BUILD="2026-10-07 10:54";
 (function(){function go(){try{BW.App.boot();}catch(e){console.error(e);var a=document.getElementById("app");if(a){a.innerHTML='<div style="padding:24px;font:16px/1.5 system-ui;color:#fff"><p>Bellwether could not start.</p><p style="opacity:.7;font-size:13px"></p><p>If this keeps happening, the saved game on this device may be damaged. Starting fresh erases your progress on this device.</p><button style="font:600 16px system-ui;padding:14px 18px;border-radius:12px;border:0;background:#E6BA4E;color:#231a05">Start fresh</button></div>';a.querySelector("p+p").textContent=String(e&&e.message||e);a.querySelector("button").onclick=function(){try{var k="bellwether.save.v1",v=localStorage.getItem(k);if(v)localStorage.setItem(k+".bad",v);localStorage.removeItem(k);}catch(x){}location.reload();};}}}if(window.claude&&window.claude.hot&&window.claude.hot.ready){window.claude.hot.ready(go);}else if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",go);}else{go();}})();
 </script>

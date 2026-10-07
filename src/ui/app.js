@@ -159,7 +159,7 @@
       list.forEach(function (sp, i) { var b = h('button', { text: sp[1], tap: function () { ui.speed = sp[0]; BW.Audio.play('speed', i); if (ui.paused) App.setPaused(false); ui.dirty = true; } }); sb.push([sp[0], b]); spd.appendChild(b); });
       var lastP = null, lastS = null;
       U.on(function () {
-        if (ui.paused !== lastP) { lastP = ui.paused; pp.innerHTML = U.icon(ui.paused ? 'play' : 'pause'); el.transport.className = ui.paused ? 'paused' : ''; step.hidden = !ui.paused; }
+        if (ui.paused !== lastP) { lastP = ui.paused; pp.innerHTML = U.icon(ui.paused ? 'play' : 'pause'); el.transport.className = ui.paused ? 'paused' : ''; step.disabled = !ui.paused; } // stays in place while running (greyed out), so the speed buttons never move under a finger
         if (ui.speed !== lastS) { lastS = ui.speed; sb.forEach(function (x) { x[1].className = x[0] === ui.speed ? 'on' : ''; }); }
       });
       U.add(el.transport, [pp, step, spd]);

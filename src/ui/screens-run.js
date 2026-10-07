@@ -422,7 +422,7 @@
         var list = h('div', { cls: 'list' });
         s.orders.forEach(function (o) { var a = G.tape.assets[o.id];
           list.appendChild(h('div', { cls: 'item' }, U.logo(a, 'sm'), h('span', { cls: 'grow' }, h('div', { cls: 't1', text: (o.side === 'buy' ? 'Buy ' : 'Sell ') + a.tkr + (o.side === 'buy' ? ' ' + f.m0(o.amt) : ' ' + Math.round(o.frac * 100) + '%') }), h('div', { cls: 't2', text: (o.side === 'buy' ? (o.kind === 'limit' ? 'if it drops to ' : 'if it rises to ') : (o.kind === 'limit' ? 'if it rises to ' : 'if it falls to ')) + f.px(o.px) })),
-            h('button', { cls: 'btn sm ghost', text: 'Cancel', tap: function () { r.orderCancel(o.n); App.touch(); reg.render(); } }))); });
+            h('button', { cls: 'btn sm ghost', text: 'Cancel', 'aria-label': 'Cancel order ' + o.n, tap: function () { r.orderCancel(o.n); App.touch(); reg.render(); } }))); });
         host.appendChild(list);
       });
     } });

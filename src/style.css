@@ -129,6 +129,7 @@ button.item:active { background: var(--bg3); }
 #transport .pp { flex: none; width: 54px; height: 44px; border-radius: 13px; background: var(--brass); color: var(--brassInk); display: grid; place-items: center; }
 #transport .pp svg { width: 20px; height: 20px; }
 #transport .step { flex: none; height: 44px; padding: 0 10px; border-radius: 13px; background: var(--bg3); font-weight: 700; font-size: 13px; color: var(--ink2); }
+#transport .step:disabled { opacity: .32; }
 #transport .spd { flex: 1; display: flex; gap: 4px; background: var(--bg); border-radius: 13px; padding: 3px; min-width: 0; }
 #transport .spd button { flex: 1; height: 44px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: var(--ink3); font-variant-numeric: tabular-nums; }
 #transport .spd button.on { background: var(--bg3); color: var(--ink); }

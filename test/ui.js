@@ -217,7 +217,7 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     // the stake leaves at the deal, and the hand waits for you
     await q.tapBtn('More'); await q.tapText('Casino'); await q.page.waitForTimeout(300);
     let dealt = false, c1 = 0;
-    for (let k = 0; k < 8 && !dealt; k++) { c1 = await cashQ(); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(350); dealt = await q.ev(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Stand' && b.offsetParent)); }
+    for (let k = 0; k < 8 && !dealt; k++) { c1 = await cashQ(); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(620); dealt = await q.ev(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Stand' && b.offsetParent)); }
     ok(dealt && (await cashQ()) === c1 - 2500, 'the blackjack stake leaves your cash when the cards are dealt');
     await q.tapBtn('Roulette'); await q.tapBtn('Blackjack');
     ok(await q.ev(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Stand' && b.offsetParent)) && (await cashQ()) === c1 - 2500, 'looking away does not cancel the hand or refund the bet');
@@ -234,14 +234,14 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     // the tap filter must not get in the way of normal quick play
     const tapAt = async (sel, gap) => { const bb = await q.page.locator(sel).first().boundingBox(); await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(gap); };
     const btnBox = async (label) => q.page.locator('button').filter({ hasText: new RegExp('^' + label + '$') }).filter({ visible: true }).first().boundingBox();
-    await q.tapBtn('Poker'); await q.page.waitForTimeout(350); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(400);
+    await q.tapBtn('Poker'); await q.page.waitForTimeout(350); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(620);
     await tapAt('[aria-label="Hold card 1"]', 190); await tapAt('[aria-label="Hold card 3"]', 190); await tapAt('[aria-label="Hold card 5"]', 400);
     ok(await q.ev(() => [...document.querySelectorAll('.felt .pcard')].map(c => c.classList.contains('held') ? 'H' : '-').join('')) === 'H-H-H', 'three cards held with taps a fifth of a second apart');
     await q.tapBtn('Draw'); await q.page.waitForTimeout(400);
     await q.tapBtn('Blackjack'); await q.page.waitForTimeout(350);
     let hs = 0, hsOk = 0, bounce = 0, bounceOk = 0;
     for (let k = 0; k < 45 && (hs < 2 || bounce < 2); k++) {
-      await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(400);
+      await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(620);
       const live = async () => q.ev(() => { const b = [...document.querySelectorAll('button')].some(x => x.textContent === 'Stand' && x.offsetParent); const hands = document.querySelectorAll('.felt > div:last-child .hand'); return { play: b, cards: hands.length ? hands[0].querySelectorAll('.pcard').length : 0, total: +(/You: (\d+)/.exec(document.querySelector('.felt').innerText) || [0, 0])[1] }; });
       let st = await live(); if (!st.play) continue;
       if (st.total <= 11 && bounce <= hs && bounce < 2) { // two taps on Hit a tenth of a second apart are one press
@@ -256,6 +256,12 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     ok(bounce > 0 && bounceOk === bounce, 'a bounced tap on Hit takes one card, not two (' + bounceOk + ' of ' + bounce + ')');
     ok(hs > 0 && hsOk === hs, 'Hit then Stand a fifth of a second apart both register (' + hsOk + ' of ' + hs + ')');
     await q.tapSel('.sheet .sh-head .x[aria-label=Close]', { last: true });
+    // the speed buttons must not move when the game starts running
+    await q.tapSel('.sheet .sh-head .x[aria-label=Close]', { last: true }).catch(() => {}); await q.page.waitForTimeout(400);
+    const spdX = async () => q.ev(() => [...document.querySelectorAll('#transport .spd button')].map(b => Math.round(b.getBoundingClientRect().left)).join(','));
+    await q.ev(() => BW.App.setPaused(true)); await q.page.waitForTimeout(200); const xPaused = await spdX();
+    await q.ev(() => BW.App.setPaused(false)); await q.page.waitForTimeout(200); const xRunning = await spdX(); await q.ev(() => BW.App.setPaused(true));
+    ok(xPaused === xRunning, 'speed buttons stay put between paused and running (' + xPaused + ')');
     // hammering the Buy button buys once
     await q.tapBtn('Market'); await q.tapBtn('Stocks').catch(() => {}); await q.tapSel('#screen .item'); await q.page.waitForTimeout(400); await q.tapBtn('Buy'); await q.tapBtn('10%');
     const buyBtn = await q.page.locator('.sheet:last-child .btn.buy').boundingBox();

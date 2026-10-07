@@ -196,7 +196,7 @@
   };
   BW.parseCode = function (code) {
     code = String(code || '').toUpperCase().replace(/[\u2010-\u2015\u2212]/g, '-'); // phones like to turn a hyphen into a long dash
-    var m = /(?:^|[^A-Z0-9])BW(\d)([A-Z])([A-Z])[-\s]?([A-Z2-9]{6})(?![A-Z0-9])/.exec(code); // works on a bare code, a share link, or a whole pasted message
+    var m = /(?:^|[^A-Z0-9])BW(\d)([A-Z])([A-Z])[-_\s]{0,3}([A-Z2-9]{6})(?![A-Z0-9])/.exec(code); // works on a bare code, a share link, or a whole pasted message
     if (!m) return { ok: false, why: 'That does not look like a challenge code. They look like BW1CE-K7QM2X.' };
     if (+m[1] !== BW.ENGINE_VERSION) return { ok: false, why: 'That code is from a different version of the game. Everyone needs to be on the same version.' };
     var scen = BW.SCENARIOS.filter(function (s) { return s.code === m[2]; })[0];
