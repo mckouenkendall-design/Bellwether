@@ -1,6 +1,6 @@
 // How each scenario's market behaves across many seeds.
 const path = require('path');
-for (const f of ['core', 'content-earth', 'tape-co', 'tape', 'run', 'meta']) require(path.join(__dirname, '../src/engine/' + f + '.js'));
+for (const f of ['core', 'content-earth', 'content-moon', 'content-mars', 'tape-co', 'tape', 'run', 'meta']) require(path.join(__dirname, '../src/engine/' + f + '.js'));
 const BW = globalThis.BW; const n = +process.argv[2] || 14;
 const med = a => [...a].sort((x, y) => x - y)[a.length >> 1], lo = a => [...a].sort((x, y) => x - y)[Math.floor(a.length * 0.1)], hi = a => [...a].sort((x, y) => x - y)[Math.floor(a.length * 0.9)];
 for (const sc of BW.SCENARIOS) {

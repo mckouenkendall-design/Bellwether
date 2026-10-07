@@ -1,5 +1,5 @@
 const path=require('path');
-for (const f of ['core','content-earth','tape-co','tape','run']) require(path.join(__dirname,'../src/engine/'+f+'.js'));
+for (const f of ['core','content-earth','content-moon','content-mars','tape-co','tape','run']) require(path.join(__dirname,'../src/engine/'+f+'.js'));
 const BW=globalThis.BW,T=BW.T;const seeds=+process.argv[2]||30;
 const agg={};
 for(let sd=1;sd<=seeds;sd++){

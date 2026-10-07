@@ -52,12 +52,20 @@
     if (G.run && !G.run.s.done) U.confirm({ title: 'Abandon the run in progress?', body: 'Your current run (' + G.scen.name + ', ' + f.dateLong(G.run.rel()) + ') will be thrown away and earns nothing. To keep its rewards, open it and use Cash in now.', yes: 'Abandon it', danger: true, onYes: go });
     else go();
   }
+  var pickDest = 'earth';
+  function destOpen(id) { return id === 'earth' || !!G.meta.unlocked['dest_' + id]; }
   S.newRun = function () {
     var m = G.meta;
+    if (!destOpen(pickDest)) pickDest = 'earth';
     U.sheet({ title: 'Choose a run', full: true, build: function (b, ctl) {
       var reg = U.region(b, function (host) {
         var perks = BW.LEGACY.filter(function (l) { return l.kind === 'perk' && m.unlocked[l.id]; });
         host.appendChild(h('p', { cls: 'lead', text: 'Every run is a fresh, random market. One year passes in about a minute at normal speed, and you can pause or change speed whenever you like.' }));
+        if (destOpen('moon')) {
+          host.appendChild(h('h3', { text: 'Where' }));
+          host.appendChild(U.seg(Object.keys(BW.DEST).filter(destOpen).map(function (k) { return [k, BW.DEST[k].name]; }), function () { return pickDest; }, function (v) { pickDest = v; reg.render(); }));
+          host.appendChild(h('p', { cls: 'soft', style: 'font-size:14px;margin-top:8px', text: BW.DEST[pickDest].blurb + (BW.DEST[pickDest].mult > 1 ? ' Bells x' + BW.DEST[pickDest].mult + '.' : '') }));
+        }
         var wrap = h('div', { cls: 'stack', style: 'margin-top:14px' });
         BW.SCENARIOS.forEach(function (sc) {
           var open = scenOpen(sc), best = m.best[sc.id];
@@ -65,7 +73,7 @@
           card.appendChild(h('div', { cls: 'rowf' }, h('div', { cls: 'grow' }, h('div', { cls: 'disp', style: 'font-size:19px', text: sc.name }), h('div', { cls: 'mute', style: 'font-size:12.5px', text: sc.years + ' years' + (sc.mult !== 1 ? ', Bells x' + sc.mult : '') + (best ? ', best ' + (best >= 1 ? '+' : '') + Math.round((best - 1) * 100) + '% vs Dolly' : '') })),
             open ? null : h('span', { cls: 'bellcount' }, bellIcon(), String(sc.cost))));
           card.appendChild(h('p', { cls: 'soft', style: 'font-size:14px', text: sc.blurb }));
-          if (open) card.appendChild(h('button', { cls: 'btn' + (sc.id === 'classic' ? ' pri' : ''), text: 'Play ' + sc.name, tap: function () { begin({ scen: sc.id, seed: randSeed(), mode: 'open' }); } }));
+          if (open) card.appendChild(h('button', { cls: 'btn' + (sc.id === 'classic' ? ' pri' : ''), text: 'Play ' + sc.name, tap: function () { begin({ scen: sc.id, seed: randSeed(), mode: 'open', dest: pickDest }); } }));
           else card.appendChild(h('button', { cls: 'btn', text: m.bells >= sc.cost ? 'Unlock for ' + sc.cost + ' Bells' : 'Needs ' + sc.cost + ' Bells', disabled: m.bells < sc.cost, tap: function () { m.bells -= sc.cost; m.unlocked['scen_' + sc.id] = 1; App.saveSoon(); BW.Audio.play('unlock'); U.toast(sc.name + ' unlocked', { kind: 'brass' }); reg.render(); } }));
           wrap.appendChild(card);
         });
@@ -131,11 +139,13 @@
       var inp = h('input', { cls: 'txt num', id: 'join-code', placeholder: 'BW1CE-K7QM2X', autocapitalize: 'characters', autocomplete: 'off', spellcheck: 'false', value: prefill || '', 'aria-label': 'Challenge code' });
       b.appendChild(h('div', { cls: 'stack' }, inp, h('button', { cls: 'btn pri', text: 'Play this code', tap: function () {
         var p = BW.parseCode(inp.value); if (!p.ok) { U.toast(p.why, { kind: 'bad', ms: 4500 }); BW.Audio.play('error'); return; }
-        begin({ scen: p.scen, seed: p.seed, mode: 'challenge', code: p.code }); } })));
+        begin({ scen: p.scen, seed: p.seed, mode: 'challenge', code: p.code, dest: p.dest }); } })));
       b.appendChild(h('h3', { text: 'Start a new one' }));
       var opts = BW.SCENARIOS.filter(scenOpen).map(function (sc) { return [sc.id, sc.name + ' (' + sc.years + 'y)']; });
       b.appendChild(U.chips(opts, function () { return st.scen; }, function (v) { st.scen = v; }, true));
-      b.appendChild(h('div', { cls: 'btns', style: 'margin-top:10px' }, h('button', { cls: 'btn', text: 'Make a code', tap: function () { var code = BW.makeCode(st.scen, 'earth', randSeed()); inp.value = code; S.shareCode(code); } })));
+      var dopts = Object.keys(BW.DEST).filter(destOpen).map(function (k) { return [k, BW.DEST[k].name]; }); st.dest = 'earth';
+      if (dopts.length > 1) { var dc = U.chips(dopts, function () { return st.dest; }, function (v) { st.dest = v; }, true); dc.style.marginTop = '6px'; b.appendChild(dc); }
+      b.appendChild(h('div', { cls: 'btns', style: 'margin-top:10px' }, h('button', { cls: 'btn', text: 'Make a code', tap: function () { var code = BW.makeCode(st.scen, st.dest, randSeed()); inp.value = code; S.shareCode(code); } })));
       b.appendChild(h('h3', { text: 'Scoreboards on this phone' }));
       var codes = Object.keys(m.friends);
       if (!codes.length) b.appendChild(h('div', { cls: 'empty', text: 'Finish a challenge or a Daily Tape and its scoreboard appears here. Add friends by pasting their result codes.' }));
@@ -169,7 +179,7 @@
           host.appendChild(list);
           host.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Dolly finished this market with ' + f.ms(rows[0].dolly) + '.' })); }
         host.appendChild(h('button', { cls: 'btn ghost', style: 'margin-top:12px', text: 'Add a friend\'s result code', tap: function () { S.addResult(function () { reg.render(); }); } }));
-        host.appendChild(h('button', { cls: 'btn', style: 'margin-top:10px', text: 'Play this market', tap: function () { var p = BW.parseCode(code); if (p.ok) begin({ scen: p.scen, seed: p.seed, mode: 'challenge', code: p.code }); } }));
+        host.appendChild(h('button', { cls: 'btn', style: 'margin-top:10px', text: 'Play this market', tap: function () { var p = BW.parseCode(code); if (p.ok) begin({ scen: p.scen, seed: p.seed, mode: 'challenge', code: p.code, dest: p.dest }); } }));
       });
     } });
   };
@@ -194,6 +204,7 @@
         m.seen.tutorial = 1;
         host.appendChild(h('p', { cls: 'lead', text: sc.blurb }));
         var card = h('div', { cls: 'card', style: 'margin-top:12px' });
+        if (G.cfg.dest !== 'earth') card.appendChild(U.kv('Where', G.tape.dest.name + ', ' + G.tape.dest.place));
         card.appendChild(U.kv('Length', sc.years + ' years'));
         card.appendChild(U.kv('You start with', f.ms(s.cash)));
         if (s.job.salary > 0) card.appendChild(U.kv('Salary', f.m0(s.job.salary) + ' a year')); else card.appendChild(U.kv('Job', 'None'));
@@ -212,7 +223,7 @@
     U.sheet({ title: 'Unlocks', full: true, head: bellsEl(function () { return String(m.bells); }), build: function (b) {
       var reg = U.region(b, function (host) {
         host.appendChild(h('p', { cls: 'lead' }, 'Finishing runs earns ', U.term('Bells', 'bells'), '. Everything here is permanent, and everything is earned by playing.'));
-        [['tool', 'Tools', 'Sharper ways to see and act. Challenges give every player all of these.'], ['perk', 'Perks', 'A stronger start on your own runs. Switched off in challenges.']].forEach(function (sec) {
+        [['tool', 'Tools', 'Sharper ways to see and act. Challenges give every player all of these.'], ['place', 'Places', 'Whole new markets, each stranger than the last.'], ['perk', 'Perks', 'A stronger start on your own runs. Switched off in challenges.']].forEach(function (sec) {
           host.appendChild(h('h3', { text: sec[1] })); host.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin:-4px 0 8px', text: sec[2] }));
           var wrap = h('div', { cls: 'list' });
           BW.LEGACY.filter(function (l) { return l.kind === sec[0]; }).forEach(function (l) {
@@ -278,16 +289,21 @@
     host.appendChild(list);
   }
   function cards(host) {
-    var m = G.meta, dest = BW.DEST.earth, all = dest.companies.concat(dest.pool), tape = { sectors: dest.sectors };
-    var n = 0; all.forEach(function (c) { if (m.cards[c.id]) n++; });
-    host.appendChild(h('p', { cls: 'lead', text: n + ' of ' + all.length + ' companies collected. Hold one for a full year to earn its bronze card. Make 50% on it for silver. Triple your money for gold.' }));
-    var grid = h('div', { cls: 'grid3', style: 'margin-top:12px' });
-    var was = G.tape; if (!G.tape) G.tape = tape;
-    all.forEach(function (c) { var t = m.cards[c.id] || 0;
-      grid.appendChild(h('div', { cls: 'cardc t' + t }, h('span', { cls: 'mute num', style: 'font-size:10.5px;font-weight:700', text: c.tkr }), U.logo({ kind: 'stock', id: c.id, tkr: c.tkr, sector: c.sector }, t ? 'lg' : ''), h('span', { style: 'font-weight:600;line-height:1.15', text: c.name }), h('span', { cls: 'mute', style: 'font-size:10.5px', text: ['Not yet held', 'Bronze', 'Silver', 'Gold'][t] })));
+    var m = G.meta, total = 0, got = 0, was = G.tape;
+    Object.keys(BW.DEST).forEach(function (k) { var d = BW.DEST[k]; d.companies.concat(d.pool).forEach(function (c) { total++; if (m.cards[c.id]) got++; }); });
+    host.appendChild(h('p', { cls: 'lead', text: got + ' of ' + total + ' companies collected. Hold one for a full year to earn its bronze card. Make 50% on it for silver. Triple your money for gold.' }));
+    Object.keys(BW.DEST).forEach(function (k) {
+      var dest = BW.DEST[k], all = dest.companies.concat(dest.pool);
+      host.appendChild(h('h3', { text: dest.name === 'Earth' ? 'Earth' : dest.name }));
+      if (!destOpen(k)) { host.appendChild(h('div', { cls: 'empty', style: 'padding:14px', text: all.length + ' cards wait here. Unlock ' + dest.name + ' to start collecting them.' })); return; }
+      var grid = h('div', { cls: 'grid3' });
+      G.tape = { sectors: dest.sectors };
+      all.forEach(function (c) { var t = m.cards[c.id] || 0;
+        grid.appendChild(h('div', { cls: 'cardc t' + t }, h('span', { cls: 'mute num', style: 'font-size:10.5px;font-weight:700', text: c.tkr }), U.logo({ kind: 'stock', id: c.id, tkr: c.tkr, sector: c.sector }, t ? 'lg' : ''), h('span', { style: 'font-weight:600;line-height:1.15', text: c.name }), h('span', { cls: 'mute', style: 'font-size:10.5px', text: ['Not yet held', 'Bronze', 'Silver', 'Gold'][t] })));
+      });
+      G.tape = was;
+      host.appendChild(grid);
     });
-    G.tape = was;
-    host.appendChild(grid);
   }
   function boxes(host, redraw) {
     var m = G.meta;
@@ -327,7 +343,7 @@
       if (!m.runs.length) { b.appendChild(h('div', { cls: 'empty', text: 'Your finished runs will be listed here.' })); return; }
       var list = h('div', { cls: 'list' });
       m.runs.forEach(function (x) { var sc = BW.SCEN_BY[x.scen] || { name: x.scen };
-        list.appendChild(h('button', { cls: 'item', tap: function () { S.shareCode(x.code); } }, h('span', { cls: 'grow' }, h('div', { cls: 't1', text: sc.name + (x.mode === 'daily' ? ' (Daily)' : x.mode === 'challenge' ? ' (Challenge)' : '') }), h('div', { cls: 't2', text: x.years.toFixed(x.years % 1 ? 1 : 0) + ' years' + (x.bankrupt ? ', bankrupt' : '') + (x.early ? ', cashed in early' : '') + ', +' + x.bells + ' Bells' })),
+        list.appendChild(h('button', { cls: 'item', tap: function () { S.shareCode(x.code); } }, h('span', { cls: 'grow' }, h('div', { cls: 't1', text: sc.name + (x.dest && x.dest !== 'earth' ? ', ' + BW.DEST[x.dest].name : '') + (x.mode === 'daily' ? ' (Daily)' : x.mode === 'challenge' ? ' (Challenge)' : '') }), h('div', { cls: 't2', text: x.years.toFixed(x.years % 1 ? 1 : 0) + ' years' + (x.bankrupt ? ', bankrupt' : '') + (x.early ? ', cashed in early' : '') + ', +' + x.bells + ' Bells' })),
           h('span', { cls: 'right' }, h('div', { cls: 'v1', text: f.ms(x.score) }), h('div', { cls: 'v2 ' + f.sign(x.ratio - 1), text: f.pp(x.ratio - 1, 0) + ' vs Dolly' })))); });
       b.appendChild(list);
       b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Tap a run to get the code for that exact market.' }));
@@ -358,7 +374,7 @@
 
   S.howto = function () {
     U.sheet({ title: 'How to play', full: true, build: function (b) {
-      [['The goal', 'Finish the run with more money than Dolly. She gets the same pay, bills and surprises as you, and she only ever buys the Herd 30 index fund. Your score is what you would keep after selling everything and paying tax.'],
+      [['The goal', 'Finish the run with more money than Dolly. She gets the same pay, bills and surprises as you, and she only ever buys the index fund. Your score is what you would keep after selling everything and paying tax.'],
         ['Time', 'A year passes in about a minute. Pause with the brass button, step a week at a time, or run at up to 8x. While a panel is open the clock waits.'],
         ['Investing', 'Open the Market to buy stocks, funds, bonds and commodities. Tap anything to see its chart, its numbers and the news behind its moves. Dotted words explain themselves.'],
         ['The news', 'Stories are generated from what is really happening inside the simulated economy and companies. Some are facts, some are rumors, some are noise. Tap a story to see what the price did afterwards.'],
@@ -373,7 +389,7 @@
   function settle() {
     var m = G.meta, r = G.run, s = r.s, sc = G.scen, cfg = G.cfg;
     var res = BW.analyze(r, G.dolly, sc), played = res.years, full = !s.early;
-    var out = { res: res, bells: BW.bellsFor(res, sc, played), badges: [], cards: [], box: null, daily: 0 };
+    var out = { res: res, bells: BW.bellsFor(res, sc, played, r.tape.dest), badges: [], cards: [], box: null, daily: 0 };
     m.stats.runs++; m.stats.years += played; if (res.ratio > 1 && full) m.stats.beats++;
     if (cfg.mode === 'daily' && !m.daily[cfg.date]) { m.stats.dailies = (m.stats.dailies || 0) + 1; out.daily = 8; }
     if (cfg.mode === 'daily' && (!m.daily[cfg.date] || res.score > m.daily[cfg.date].score)) m.daily[cfg.date] = { score: res.score, dolly: res.dolly, ratio: res.ratio };
@@ -383,7 +399,7 @@
     var cds = BW.cardsFor(r); for (var id in cds) if (cds[id] > (m.cards[id] || 0)) { m.cards[id] = cds[id]; out.cards.push([id, cds[id]]); }
     if (played >= 3 && played >= sc.years * 0.5) { out.box = s.bankrupt ? 0 : BW.boxTierFor(res.ratio); m.boxes.push({ tier: out.box }); }
     out.total = out.bells + out.daily; m.bells += out.total; m.bellsEarned += out.total;
-    m.runs.unshift({ scen: sc.id, code: cfg.code, mode: cfg.mode, years: played, score: res.score, dolly: res.dolly, ratio: res.ratio, bells: out.total, t: Date.now(), bankrupt: s.bankrupt, early: !!s.early });
+    m.runs.unshift({ scen: sc.id, dest: cfg.dest, code: cfg.code, mode: cfg.mode, years: played, score: res.score, dolly: res.dolly, ratio: res.ratio, bells: out.total, t: Date.now(), bankrupt: s.bankrupt, early: !!s.early });
     if (m.runs.length > 40) m.runs.length = 40;
     if (full && (!m.best[sc.id] || res.ratio > m.best[sc.id])) m.best[sc.id] = res.ratio;
     if (s.fair && full) { var rows = m.friends[cfg.code] || (m.friends[cfg.code] = []); rows.push({ name: m.name || 'You', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt, me: true }); }
@@ -410,6 +426,7 @@
       var chart = C.lines(cbox, { height: 170, n: function () { return s.hist.nw.length; }, x: function (i, long) { return long ? f.dateLong((i + 1) * 5) : f.date((i + 1) * 5); },
         series: [{ get: function (i) { return d.s.hist.nw[i] / 100; }, color: '--ink3', dash: [5, 4], name: 'Dolly', width: 1.6 }, { get: function (i) { return s.hist.nw[i] / 100; }, color: '--brass', name: 'You', fill: true, width: 2.4 }], fmt: C.fmtUsd, fmtTip: function (v) { return f.m0(Math.round(v * 100)); } });
       b.appendChild(cbox); setTimeout(chart.draw, 300);
+      b.appendChild(h('p', { cls: 'mute', style: 'font-size:12px;margin-top:6px' }, 'The chart tracks net worth. The two boxes above show ', U.term('walk-away value', 'liq'), ': what is left after selling everything and paying the tax and selling costs.'));
 
       b.appendChild(h('h3', { text: 'Why it turned out this way' }));
       var ls = h('div', { cls: 'stack' });
@@ -425,7 +442,7 @@
         bars.appendChild(h('div', { cls: 'bar' }, h('span', { text: x[0] }), h('span', { cls: 'num ' + f.sign(x[1]), style: 'font-weight:700', text: f.mp(x[1]) }), h('div', { cls: 'trk' }, h('i', { style: (x[1] >= 0 ? 'left:50%;' : 'right:50%;') + 'width:' + w + '%;background:var(' + (x[1] >= 0 ? '--up' : '--down') + ')' })))); });
       bars.appendChild(h('div', { cls: 'kv total', style: 'margin-top:6px' }, h('span', { text: 'Your net worth minus Dolly\'s' }), h('span', { cls: f.sign(res.gap), text: f.mp(res.gap) })));
       b.appendChild(bars);
-      b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'Each line asks: if every dollar you put there had gone into the Herd 30 fund on the same day instead, how much more or less would you have now?' }));
+      b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'Each line asks: if every dollar you put there had gone into the ' + tape.dest.indexName + ' fund on the same day instead, how much more or less would you have now?' }));
 
       b.appendChild(h('h3', { text: 'What it cost to play' }));
       var cost = h('div', { cls: 'card' });
@@ -474,10 +491,10 @@
         b.appendChild(h('div', { cls: 'stack' }, ta, h('div', { cls: 'btns' }, copyBtn('Copy', txt, ta), shareBtn(txt, ta)), h('button', { cls: 'btn ghost', text: 'Open the scoreboard', tap: function () { S.board(G.cfg ? G.cfg.code : ''); } })));
         if (!m.name) b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'Set your name in Settings and it will appear on your friends\' scoreboards.' }));
       }
-      var code = G.cfg.code, scen = G.scen.id, seed = G.cfg.seed, mode = G.cfg.mode, date = G.cfg.date;
+      var code = G.cfg.code, scen = G.scen.id, seed = G.cfg.seed, mode = G.cfg.mode, date = G.cfg.date, destId = G.cfg.dest;
       b.appendChild(h('div', { cls: 'stack', style: 'margin-top:22px' },
         h('button', { cls: 'btn pri', text: 'Back to the hub', tap: function () { ctl.close(true); leave(); App.toHub(); } }),
-        h('button', { cls: 'btn', text: 'Replay this exact market', tap: function () { ctl.close(true); leave(); App.startRun({ scen: scen, seed: seed, mode: mode === 'open' ? 'challenge' : mode, code: code, date: date }); } }),
+        h('button', { cls: 'btn', text: 'Replay this exact market', tap: function () { ctl.close(true); leave(); App.startRun({ scen: scen, seed: seed, mode: mode === 'open' ? 'challenge' : mode, code: code, date: date, dest: destId }); } }),
         mode === 'open' ? h('button', { cls: 'btn ghost', text: 'Challenge a friend to this market', tap: function () { S.shareCode(code); } }) : null));
     } });
   };

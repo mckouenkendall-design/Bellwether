@@ -1,6 +1,6 @@
 // Diagnostics: how predictable are stock returns from things a player could see?
 const path=require('path');
-for (const f of ['core','content-earth','tape-co','tape','run']) require(path.join(__dirname,'../src/engine/'+f+'.js'));
+for (const f of ['core','content-earth','content-moon','content-mars','tape-co','tape','run']) require(path.join(__dirname,'../src/engine/'+f+'.js'));
 const BW=globalThis.BW,T=BW.T;
 const seeds=+process.argv[2]||20;
 function rankIC(xs,ys){const n=xs.length;if(n<8)return null;const rk=a=>{const o=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]);const r=new Array(n);o.forEach((p,i)=>r[p[1]]=i);return r;};const a=rk(xs),b=rk(ys);let sa=0;for(let i=0;i<n;i++)sa+=(a[i]-b[i])**2;return 1-6*sa/(n*(n*n-1));}

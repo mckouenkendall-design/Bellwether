@@ -1,6 +1,6 @@
 // Sanity checks for codes, scenarios and the review.
 const path = require('path');
-for (const f of ['core', 'content-earth', 'tape-co', 'tape', 'run', 'meta']) require(path.join(__dirname, '../src/engine/' + f + '.js'));
+for (const f of ['core', 'content-earth', 'content-moon', 'content-mars', 'tape-co', 'tape', 'run', 'meta']) require(path.join(__dirname, '../src/engine/' + f + '.js'));
 const BW = globalThis.BW; let bad = 0; const ok = (c, m) => { if (!c) { bad++; console.log('FAIL', m); } };
 // challenge codes
 for (const s of BW.SCENARIOS) { const code = BW.makeCode(s.id, 'earth', 123456789 + s.years); const p = BW.parseCode(code.toLowerCase().replace('-', '')); ok(p.ok && p.scen === s.id && p.seed === (123456789 + s.years) % 1073741824 && p.code === code, 'code ' + code); }

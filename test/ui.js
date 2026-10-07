@@ -116,7 +116,7 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     };
     const sigA = await play(p, 'Kendall');
     ok(await p.ev(() => BW.App.tool('orders') && BW.App.tool('coin') && BW.App.tool('fast')), 'challenges give the full toolkit');
-    ok(await p.ev(() => BW.G.run.s.feeMult === 1 && BW.G.run.s.startCash === 300000), 'challenges ignore perks');
+    ok(await p.ev(() => BW.G.run.s.feeMult === 1 && BW.G.run.s.startCash === 500000), 'challenges ignore perks');
     const p2 = await P.open(); const sigB = await play(p2, 'Tanner');
     ok(sigA === sigB, 'both phones generated the same market (' + sigA + ')');
     // same actions on both -> identical result; different actions -> different result
@@ -174,6 +174,27 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     await p.tapBtn('News'); await p.tapBtn('How reliable has each source been?'); await p.shot('a24-sources'); await closeTop();
     await p.tapBtn('More'); await p.tapText('Cash in now'); await p.tapBtn('Cash in'); await p.page.waitForTimeout(900); await p.shot('a25-early-results');
     await body(99999); await p.tapBtn('Back to the hub');
+
+    console.log('10. The Moon and Mars');
+    await p.ev(() => { BW.G.meta.unlocked.dest_moon = 1; BW.G.meta.unlocked.dest_mars = 1; BW.App.toHub(); });
+    await p.tapBtn('Start a run'); await p.tapBtn('The Moon'); await p.shot('a26-newrun-moon'); await p.tapBtn('Play Five-Year Sprint'); await p.tapBtn('Ring the opening bell');
+    await p.ev(() => { BW.App.setPaused(true); BW.App._step(200); BW.G.run._cash(20000000, 'life'); BW.App.touch(); });
+    ok(await p.ev(() => BW.G.tape.dest.id === 'moon' && BW.G.tape.dest.companies.length === 15 && BW.G.tape.fundId && BW.G.tape.assets[BW.G.tape.fundId].tkr === 'LUNA'), 'run is on the Moon with 15 companies');
+    await p.tapBtn('Market'); await p.shot('a27-moon-market'); await p.tapSel('#screen .item'); await p.page.waitForTimeout(400); await body(700); await p.shot('a28-moon-company'); await closeTop();
+    await p.tapBtn('Other'); await p.shot('a29-moon-commodities');
+    await p.tapBtn('Life'); await p.tapBtn('Business'); await p.shot('a30-moon-business');
+    ok(await p.ev(() => [...document.querySelectorAll('#screen .item')].some(i => i.textContent.includes('Moon Rock Stall'))), 'lunar businesses listed');
+    await p.tapText('Noodle Rover'); await p.tapText('Buy for', { exact: false }); ok(await p.ev(() => BW.G.run.s.biz.length === 1), 'bought a lunar business');
+    await p.tapBtn('Property'); await p.shot('a31-moon-property');
+    await p.ev(() => BW.App._step(5000)); await p.page.waitForTimeout(1200);
+    ok(await p.ev(() => !!BW.G.meta.badges.moonrun), 'Moon badge earned'); ok(await ledgerOK(), 'ledger adds up on the Moon');
+    await p.shot('a32-moon-results'); await body(99999); await p.tapBtn('Back to the hub');
+    const mcode = await p.ev(() => BW.makeCode('sprint', 'mars', 4242));
+    await p.tapText('Challenge friends'); await p.page.waitForTimeout(300); await p.page.locator('#join-code').fill(mcode); await p.tapBtn('Play this code'); await p.tapBtn('Ring the opening bell');
+    await p.ev(() => { BW.App.setPaused(true); BW.App._step(300); });
+    ok(await p.ev(() => BW.G.tape.dest.id === 'mars'), 'a Mars challenge code opens a Mars market (' + mcode + ')');
+    await p.tapBtn('Market'); await p.shot('a33-mars-market');
+    await p.ev(() => BW.App._step(5000)); await p.page.waitForTimeout(1200); ok(await ledgerOK(), 'ledger adds up on Mars'); await body(99999); await p.tapBtn('Back to the hub');
   } catch (e) { fails++; console.log('TEST ERROR:', e.message.split('\n')[0]); await p.shot('zz-error').catch(() => {}); }
   console.log('script errors:', p.errors.length); p.errors.slice(0, 10).forEach((e) => console.log(' -', e));
   if (p.errors.length) fails++;

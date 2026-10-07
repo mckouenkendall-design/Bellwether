@@ -174,6 +174,36 @@
       { rev: 200, om: 0.02, omMature: 0.28, g: 0.35, cyc: 0.1, beta: 1.4, dx: 2.0, pay: 0, ci: 0.7, sr: 0.18, sm: 0.05, risk: 0.026, trials: true })
   ];
 
+  var secEvents = {
+      tech: [['Businesses rush to upgrade their systems', 'Corporate tech budgets are up sharply this year.', 3, 0.02, 0.03], ['Chip shortage slows the whole tech supply chain', 'Factories cannot get parts. Sales that would have happened this year slip into next.', -3, -0.03, -0.03], ['Governments move to regulate big tech', 'New rules on data and competition are being drafted. Compliance will cost money.', -1, -0.04, -0.05]],
+      health: [['Government proposes caps on drug prices', 'If passed, drug makers would earn less on their best sellers.', -1.5, -0.06, -0.06], ['Ageing population lifts demand for treatment', 'Hospitals report record volumes.', 2.5, 0.02, 0.02], ['Regulator speeds up approvals for new medicines', 'New drugs will reach the market sooner.', 2, 0.02, 0.04]],
+      energy: [['New pipelines approved after years of delay', 'Producers will be able to ship more, more cheaply.', 2, 0.04, 0.03], ['Windfall tax proposed on energy profits', 'Lawmakers want a share of high energy profits.', 0, -0.08, -0.05], ['Mild winter leaves fuel stockpiles full', 'Less heating fuel was burned than expected.', -3, -0.03, -0.02]],
+      bank: [['Regulators order banks to hold more capital', 'Safer banks, but less money to lend and lower returns.', -1, -0.05, -0.05], ['Loan demand surges as businesses expand', 'Banks report their busiest lending in years.', 3.5, 0.03, 0.03], ['Bad loans tick up across the industry', 'More borrowers are falling behind on payments.', -1, -0.07, -0.05]],
+      staples: [['Shoppers trade down to store brands', 'Big-name brands are losing shelf space to cheaper copies.', -2, -0.03, -0.02], ['Food makers push through price rises', 'Shoppers are paying up without buying less.', 2, 0.04, 0.02], ['Packaging and shipping costs jump', 'Getting goods to shelves costs more this year.', 0, -0.05, -0.02]],
+      retail: [['Holiday shopping breaks records', 'Shoppers spent more than any forecast expected.', 4, 0.03, 0.04], ['Consumers pull back on spending', 'Surveys show households are nervous and saving more.', -4, -0.04, -0.05], ['Travel bookings hit an all-time high', 'Flights and hotels are selling out months ahead.', 3, 0.03, 0.03]],
+      indust: [['Government unveils a big building programme', 'Roads, bridges and rail will be rebuilt over a decade.', 4, 0.02, 0.05], ['Factory orders fall for a third month', 'Manufacturers are seeing fewer new orders.', -4, -0.03, -0.04], ['Shipping costs ease as ports clear', 'Bottlenecks that raised costs last year are gone.', 1, 0.04, 0.02]],
+      util: [['Regulators approve higher power bills', 'Utilities may charge more to fund network upgrades.', 1.5, 0.05, 0.03], ['Heatwave strains the power grid', 'Record demand, record repair bills.', 1, -0.04, -0.02], ['Regulator rejects rate increases', 'Utilities must absorb higher costs themselves.', -1, -0.06, -0.04]],
+      mater: [['Building boom abroad lifts demand for raw materials', 'Orders for metals and chemicals are surging.', 4, 0.04, 0.05], ['New environmental rules raise mining costs', 'Cleaner operations will cost more to run.', 0, -0.06, -0.03], ['Stockpiles of raw materials pile up', 'Too much supply chasing too few buyers.', -4, -0.04, -0.04]],
+      media: [['Advertisers boost budgets', 'Companies are spending more to reach customers.', 3.5, 0.04, 0.04], ['Ad spending dries up', 'Marketing budgets were the first thing cut.', -4, -0.05, -0.05], ['Phone networks start a price war', 'Carriers are cutting prices to steal each other\'s customers.', -2, -0.05, -0.04]]
+    };
+  var shocks = [['car', 'The car needs a new transmission', 900, 2600], ['medical', 'A hospital visit your insurance only partly covers', 1200, 5200], ['vet', 'Emergency surgery for the dog', 600, 2400],
+      ['laptop', 'Your laptop died the week of a deadline', 700, 1600], ['family', 'A family member needs help with rent', 800, 3000], ['dental', 'A cracked tooth and a crown', 600, 1900],
+      ['boiler', 'The heating failed in midwinter', 1000, 3800], ['move', 'Your landlord sold up and you have to move', 1500, 3600], ['fine', 'A stack of parking tickets and a tow', 300, 900], ['wedding', 'Three weddings in one summer', 900, 2400]];
+    var windfalls = [['bonus', 'A surprise bonus at work', 800, 4200], ['refund', 'A tax refund you were not expecting', 400, 1800], ['gift', 'A relative left you some money', 2000, 9000], ['sold', 'You sold some old stuff online', 300, 1100]];
+  var propTypes = [
+    { id: 'condo', name: 'One-bed condo', v: [70, 125], y: [0.105, 0.13], n: 1.2, units: 1 },
+    { id: 'house', name: 'Starter house', v: [140, 240], y: [0.088, 0.108], n: 1.5, units: 1 },
+    { id: 'duplex', name: 'Duplex', v: [230, 360], y: [0.1, 0.125], n: 1.0, units: 2 },
+    { id: 'fourplex', name: 'Fourplex', v: [420, 680], y: [0.105, 0.13], n: 0.7, units: 4 },
+    { id: 'apts', name: 'Apartment building', v: [1300, 3800], y: [0.105, 0.125], n: 0.5, units: 18 },
+    { id: 'retail', name: 'Retail strip', v: [900, 2600], y: [0.1, 0.125], n: 0.4, units: 6, com: true },
+    { id: 'warehouse', name: 'Warehouse', v: [2200, 7000], y: [0.09, 0.115], n: 0.3, units: 1, com: true },
+    { id: 'tower', name: 'Office tower', v: [18000, 70000], y: [0.085, 0.11], n: 0.2, units: 40, com: true }
+  ];
+  var streets = ['Larkhill Lane', 'Coppergate', 'Fennel Row', 'Old Mill Road', 'Hawthorn Close', 'Quarry Street', 'Tanners Walk', 'Bellfield Avenue', 'Marsh Lane', 'Cinder Hill',
+    'Ropewalk', 'Saffron Court', 'Juniper Way', 'Foundry Road', 'Wren Street', 'Harbour View', 'Thistle Bank', 'Orchard Rise', 'Ember Street', 'Kingfisher Drive',
+    'Plover Place', 'Station Approach', 'Weavers Yard', 'Elmstead Road', 'Pike Street', 'Canal Side', 'Heron Court', 'Lantern Row', 'Barley Close', 'Northgate'];
+
   BW.DEST = BW.DEST || {};
   BW.DEST.earth = {
     id: 'earth', name: 'Earth', place: 'the Old Exchange', cur: '$',
@@ -186,7 +216,13 @@
       { id: 'wheat', tkr: 'XWHT', name: 'Wheat', unit: 'bushel', p0: 5.6, desc: 'Moves on weather and harvests more than on the economy. Mostly noise, with the odd drought.' }
     ],
     crypto: { id: 'fleece', tkr: 'FLCE', name: 'Fleececoin', p0: 0.8, desc: 'A digital coin. Nothing backs it: no profits, no rent, no interest. Its price is whatever the next buyer will pay. That can be a lot more, or nothing.' },
-    volMult: 1, growthAdd: 0,
-    propTypes: null // filled in by realestate content
+    volMult: 1, growthAdd: 0, code: 'E', mult: 1, cost: 0, maniaSector: 'tech',
+    blurb: 'The market you know. Thirty companies, four commodities, one coin nobody can explain.',
+    secEvents: secEvents, shocks: shocks, windfalls: windfalls, propTypes: propTypes, streets: streets,
+    cmNews: {
+      oilup: [['Oil spikes as producers cut supply', 'Conflict near key shipping lane sends oil soaring', 'Oil jumps after export ban'], 'Fuel costs feed into almost every price. Expect inflation to rise, energy companies to profit, and airlines, shippers and factories to pay more.'],
+      oildown: [['Oil slumps as producers flood the market', 'Glut sends oil prices tumbling'], 'Cheap fuel is a tax cut for everyone except those who sell it. Good for inflation, bad for energy companies.'],
+      wheat: [['Drought scorches the grain belt', 'Floods wipe out wheat harvest'], 'Wheat prices jump. Food makers pay more for ingredients for a season or two.']
+    }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -1,6 +1,6 @@
 // Calibration: generate many tapes and print what the market looks like.
 const path=require('path');
-for (const f of ['core','content-earth','tape-co','tape']) require(path.join(__dirname,'../src/engine/'+f+'.js'));
+for (const f of ['core','content-earth','content-moon','content-mars','tape-co','tape']) require(path.join(__dirname,'../src/engine/'+f+'.js'));
 const BW=globalThis.BW;
 const years=+process.argv[2]||20, runs=+process.argv[3]||40;
 function stats(arr){const a=[...arr].sort((x,y)=>x-y);const m=a.reduce((s,x)=>s+x,0)/a.length;return {mean:m,med:a[a.length>>1],p10:a[Math.floor(a.length*.1)],p90:a[Math.floor(a.length*.9)],min:a[0],max:a[a.length-1]};}

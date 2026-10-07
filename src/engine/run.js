@@ -31,7 +31,9 @@
     { id: 'team', name: 'Sports Team', cost: 150000000, roc: 0.11, cyc: 0.8, vol: 0.25, desc: 'A trophy asset. The profits are modest. The bragging rights are not.' },
     { id: 'rocket', name: 'Rocket Yard', cost: 600000000, roc: 0.14, cyc: 1.2, vol: 0.5, desc: 'Launches satellites for paying customers. Most launches work.' }
   ];
-  BW.BIZ_BY = {}; BIZ.forEach(function (b) { BW.BIZ_BY[b.id] = b; });
+  BW.BIZ_BY = {};
+  BW.DEST.earth.biz = BIZ;
+  Object.keys(BW.DEST).forEach(function (k) { (BW.DEST[k].biz || []).forEach(function (b) { BW.BIZ_BY[b.id] = b; }); });
   var CAT_OF = { stock: 'stocks', fund: 'herd', sfund: 'sector', bond: 'bonds', cmdty: 'cmdty', crypto: 'crypto' };
   BW.CAT_OF = CAT_OF;
 

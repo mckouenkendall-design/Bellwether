@@ -2,10 +2,10 @@
 // nothing breaks, and the index-only strategy is as hard to beat as a real one.
 //   node test/bots.js [years] [seeds]
 const path = require('path');
-for (const f of ['core', 'content-earth', 'tape-co', 'tape', 'run']) require(path.join(__dirname, '../src/engine/' + f + '.js'));
+for (const f of ['core', 'content-earth', 'content-moon', 'content-mars', 'tape-co', 'tape', 'run']) require(path.join(__dirname, '../src/engine/' + f + '.js'));
 const BW = globalThis.BW, T = BW.T;
 const years = +process.argv[2] || 20, seeds = +process.argv[3] || 30;
-const LIFE = { salary: 4800000, cash: 300000, living: 230000, loan: { bal: 1800000, rate: 6, pay: 19984 } };
+const LIFE = { salary: 5200000, cash: 500000, living: 235000, loan: { bal: 1800000, rate: 6, pay: 19984 } };
 
 let failures = 0;
 function fail(msg) { failures++; if (failures < 30) console.log('FAIL:', msg); }

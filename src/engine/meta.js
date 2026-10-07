@@ -5,7 +5,7 @@
   'use strict';
   var BW = root.BW, REG = BW.REG, clamp = BW.clamp;
   var LOAN = { bal: 1800000, rate: 6, pay: 19984 };
-  var LIFE = BW.LIFE_DEFAULT = { salary: 4800000, cash: 300000, living: 230000, loan: LOAN };
+  var LIFE = BW.LIFE_DEFAULT = { salary: 5200000, cash: 500000, living: 235000, loan: LOAN };
 
   /* ---------- scenarios ---------- */
   BW.SCENARIOS = [
@@ -35,14 +35,17 @@
     // tools
     { id: 'orders', kind: 'tool', name: 'Standing Orders', cost: 12, desc: 'Leave instructions that fire on their own: buy if it drops to a price, sell if it falls through a floor, take profit at a target.' },
     { id: 'screener', kind: 'tool', name: 'Screener', cost: 10, desc: 'Sort and filter every company by valuation, growth, debt and dividends.' },
-    { id: 'studio', kind: 'tool', name: 'Chart Studio', cost: 10, desc: 'Moving averages, trading volume, and any chart overlaid against the Herd 30.' },
+    { id: 'studio', kind: 'tool', name: 'Chart Studio', cost: 10, desc: 'Moving averages, trading volume, and any chart overlaid against the index.' },
     { id: 'econlab', kind: 'tool', name: 'Economy Lab', cost: 15, desc: 'The gauges professionals watch: how expensive the market is, the gap between long and short interest rates, and stress in the loan market.' },
     { id: 'newsdesk', kind: 'tool', name: 'News Desk', cost: 18, desc: 'Filter the feed by source and see how often each kind of source has turned out to be right so far this run.' },
     { id: 'analyst', kind: 'tool', name: 'Analyst Desk', cost: 30, desc: 'Analysts\' price targets for every company. They are informed, noisy, and tend to chase whatever has gone up lately.' },
-    { id: 'sectorfunds', kind: 'tool', name: 'Sector Funds', cost: 10, desc: 'Ten funds, each owning one whole sector.' },
-    { id: 'coin', kind: 'tool', name: 'Coin Exchange', cost: 10, desc: 'Opens trading in Fleececoin. You have been warned.' },
+    { id: 'sectorfunds', kind: 'tool', name: 'Sector Funds', cost: 10, desc: 'A fund for each sector, owning every company in it.' },
+    { id: 'coin', kind: 'tool', name: 'Coin Exchange', cost: 10, desc: 'Opens trading in Fleececoin and its cousins on other worlds. You have been warned.' },
     { id: 'fast', kind: 'tool', name: 'Fast Forward', cost: 8, desc: 'Adds 16x speed.' },
     { id: 'autopsy', kind: 'tool', name: 'News Autopsy', cost: 20, desc: 'After each run, see which headlines were real, which were noise, and what each one did to the price.' },
+    // places
+    { id: 'dest_moon', kind: 'place', name: 'The Moon', cost: 120, desc: 'Opens the Tranquility Exchange: fifteen lunar companies, new commodities, new property, new businesses. Bells earned there are worth 25% more.' },
+    { id: 'dest_mars', kind: 'place', name: 'Mars', cost: 400, req: 'dest_moon', desc: 'Opens the Olympus Exchange, the wildest market there is. Bells earned there are worth 50% more.' },
     // perks (ignored in challenges and the daily tape, so those stay fair)
     { id: 'seed1', kind: 'perk', name: 'Head Start I', cost: 10, desc: 'Begin with an extra $2,000.', seed: 200000 },
     { id: 'seed2', kind: 'perk', name: 'Head Start II', cost: 25, req: 'seed1', desc: 'Begin with an extra $10,000.', seed: 1000000 },
@@ -154,16 +157,19 @@
     { id: 'mogul', r: 2, name: 'Property Mogul', desc: 'Own five properties at once.', t: function (c) { return c.maxProps >= 5 || c.s.props.length >= 5; } },
     { id: 'steal', r: 1, name: 'Stole It', desc: 'Buy a property for at least 7% under what it is worth.', t: function (c) { return c.st.propDeals >= 1; } },
     { id: 'flip', r: 1, name: 'Flipper', desc: 'Renovate a property and sell it for a profit within two years.', t: function (c) { return c.st.flips >= 1; } },
-    { id: 'tower', r: 4, name: 'Skyline', desc: 'Own an office tower.', t: function (c) { return c.s.props.some(function (p) { return p.type === 'tower'; }) || c.st.tower; } },
+    { id: 'tower', r: 4, name: 'Skyline', desc: 'Own the biggest building on the market.', t: function (c) { return c.s.props.some(function (p) { return p.type === 'tower'; }) || c.st.tower; } },
     { id: 'boss', r: 0, name: 'Open for Business', desc: 'Buy your first business.', t: function (c) { return c.st.bizMax >= 1; } },
     { id: 'empire', r: 2, name: 'Empire', desc: 'Own six businesses at once.', t: function (c) { return c.st.bizMax >= 6; } },
-    { id: 'rocket', r: 4, name: 'Liftoff', desc: 'Own the Rocket Yard.', t: function (c) { return c.s.biz.some(function (x) { return x.type === 'rocket'; }); } },
+    { id: 'rocket', r: 4, name: 'Liftoff', desc: 'Own the biggest business there is: the Rocket Yard, the Mass Driver or the Space Elevator.', t: function (c) { return c.s.biz.some(function (x) { return x.type === 'rocket' || x.type === 'l_rail' || x.type === 'm_lift'; }); } },
+    { id: 'moonrun', r: 2, name: 'One Small Step', desc: 'Finish a run on the Moon.', t: function (c) { return c.run.tape.dest.id === 'moon' && c.full; } },
+    { id: 'marsrun', r: 3, name: 'Red Dawn', desc: 'Finish a run on Mars.', t: function (c) { return c.run.tape.dest.id === 'mars' && c.full; } },
+    { id: 'marsbeat', r: 4, name: 'Master of Two Worlds', desc: 'Beat Dolly on Mars.', t: function (c) { return c.run.tape.dest.id === 'mars' && c.full && c.ratio > 1; } },
     { id: 'coupon', r: 0, name: 'Coupon Clipper', desc: 'Collect $10,000 of dividends in one run.', t: function (c) { return c.tot.divs >= 1e6; } },
     { id: 'income', r: 2, name: 'Mailbox Money', desc: 'Collect $250,000 of dividends in one run.', t: function (c) { return c.tot.divs >= 2.5e7; } },
     { id: 'locked', r: 0, name: 'Locked In', desc: 'Open a term deposit.', t: function (c) { return c.st.cds >= 1; } },
     { id: 'house', r: 1, name: 'The House Always Wins', desc: 'Lose $1,000 in the casino in one run.', t: function (c) { return c.tot.casinoBet - c.tot.casinoWon >= 1e5; } },
     { id: 'lucky', r: 2, name: 'Beat the House', desc: 'Walk out of the casino $5,000 ahead in one run.', t: function (c) { return c.tot.casinoWon - c.tot.casinoBet >= 5e5; } },
-    { id: 'coiner', r: 2, name: 'Fleeced', desc: 'Lose more than half your money on Fleececoin.', t: function (c) { var p = c.s.pme.fleece; return p && p.paid > 1e5 && (p.got + c.run.posValue('fleece')) < 0.5 * p.paid; } },
+    { id: 'coiner', r: 2, name: 'Fleeced', desc: 'Lose more than half of what you put into a coin.', t: function (c) { var p = c.s.pme.fleece; return p && p.paid > 1e5 && (p.got + c.run.posValue('fleece')) < 0.5 * p.paid; } },
     { id: 'marathon', r: 2, name: 'Gold Watch', desc: 'Finish a 40-year run.', t: function (c) { return c.years >= 40 && c.full; } },
     { id: 'daily7', r: 2, name: 'Regular', desc: 'Finish the Daily Tape on 7 different days.', t: function (c) { return (c.meta.stats.dailies || 0) >= 7; } },
     { id: 'hard', r: 3, name: 'Survivor', desc: 'Beat Dolly in The Lost Decade or Stagflation.', t: function (c) { return c.ratio > 1 && c.full && (c.scen.id === 'lost' || c.scen.id === 'stag'); } },
@@ -186,7 +192,7 @@
   function dec32(s) { var n = 0; for (var i = 0; i < s.length; i++) { var k = B32.indexOf(s[i]); if (k < 0) return -1; n = n * 32 + k; } return n; }
   BW.makeCode = function (scenId, destId, seed) {
     var sc = BW.SCEN_BY[scenId];
-    return 'BW' + BW.ENGINE_VERSION + sc.code + (destId || 'earth')[0].toUpperCase() + '-' + enc32((seed >>> 0) % 1073741824, 6);
+    return 'BW' + BW.ENGINE_VERSION + sc.code + BW.DEST[destId || 'earth'].code + '-' + enc32((seed >>> 0) % 1073741824, 6);
   };
   BW.parseCode = function (code) {
     code = String(code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
@@ -194,7 +200,7 @@
     if (!m) return { ok: false, why: 'That does not look like a challenge code. They look like BW1CE-K7QM2X.' };
     if (+m[1] !== BW.ENGINE_VERSION) return { ok: false, why: 'That code is from a different version of the game. Everyone needs to be on the same version.' };
     var scen = BW.SCENARIOS.filter(function (s) { return s.code === m[2]; })[0];
-    var dest = Object.keys(BW.DEST).filter(function (d) { return d[0].toUpperCase() === m[3]; })[0];
+    var dest = Object.keys(BW.DEST).filter(function (d) { return BW.DEST[d].code === m[3]; })[0];
     var seed = dec32(m[4]);
     if (!scen || !dest || seed < 0) return { ok: false, why: 'That code is not valid.' };
     return { ok: true, scen: scen.id, dest: dest, seed: seed, code: 'BW' + m[1] + m[2] + m[3] + '-' + m[4] };
@@ -235,7 +241,7 @@
   };
 
   /* ---------- the review ---------- */
-  var CAT_LABEL = BW.CAT_LABEL = { stocks: 'Stocks you picked', herd: 'Herd 30 fund', sector: 'Sector funds', bonds: 'Bonds', cmdty: 'Commodities', crypto: 'Fleececoin', cds: 'Term deposits', realestate: 'Real estate', business: 'Businesses', casino: 'Casino' };
+  var CAT_LABEL = BW.CAT_LABEL = { stocks: 'Stocks you picked', herd: 'The index fund', sector: 'Sector funds', bonds: 'Bonds', cmdty: 'Commodities', crypto: 'The coin', cds: 'Term deposits', realestate: 'Real estate', business: 'Businesses', casino: 'Casino' };
   BW.analyze = function (run, dolly, scen) {
     var s = run.s, tape = run.tape, M = tape.M, d = s.d, trNow = M.tr[d];
     var score = run.liq(), dScore = dolly.liq();
@@ -280,7 +286,7 @@
     if (s.bankrupt) L2.push({ k: 'bad', h: 'You went bankrupt', b: 'Debts grew faster than you could pay them. Borrowed money makes good outcomes better and bad outcomes fatal. A cash cushion is what stops one bad month becoming a spiral.' });
     if (res.ratio >= 1.02) L2.push({ k: 'good', h: 'You beat the index', b: 'You finished ' + pct(res.ratio - 1) + ' ahead of Dolly. Most professionals fail to do that over ' + Math.round(years) + ' years. Whether it was skill or luck takes more than one run to tell, so try the same approach on a new market.' });
     else if (res.ratio >= 0.98) L2.push({ k: 'ok', h: 'You matched the index', b: 'A tie with Dolly is a good result. She did nothing but buy the whole market every month, and that beats most people who try harder.' });
-    else L2.push({ k: 'bad', h: 'The index won', b: 'Dolly finished ' + pct(1 / Math.max(res.ratio, 0.01) - 1) + ' ahead of you by buying the Herd 30 fund every month and never selling. This is the normal result, for amateurs and professionals alike.' });
+    else L2.push({ k: 'bad', h: 'The index won', b: 'Dolly finished ' + pct(1 / Math.max(res.ratio, 0.01) - 1) + ' ahead of you by buying the ' + tape.dest.indexName + ' fund every month and never selling. This is the normal result, for amateurs and professionals alike.' });
     if (res.avgCash > 0.25 && res.idle < 0) L2.push({ k: 'bad', h: 'Too much sat in cash', b: 'On average ' + pct(res.avgCash) + ' of your money was in cash. The market returned about ' + (res.idxCagr * 100).toFixed(1) + '% a year over this run. Cash earned far less, and waiting for the perfect moment cost you roughly ' + f(-res.idle, { auto: true }) + '.' });
     if (stock && stock.alpha < -0.03 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: 'Your stock picks trailed the market', b: 'The money you put into individual companies would be worth ' + f(-stock.alpha, { auto: true }) + ' more in the index fund. Most single stocks lose to the index, because a few big winners drive most of its gains and they are hard to pick in advance.' });
     if (stock && stock.alpha > 0.03 * Math.max(res.nw, 1)) L2.push({ k: 'good', h: 'Your stock picks beat the market', b: 'Your individual companies are worth ' + f(stock.alpha, { auto: true }) + ' more than the same money in the index fund.' });
@@ -292,17 +298,17 @@
     if (cats.realestate && Math.abs(cats.realestate.alpha) > 0.03 * Math.max(res.nw, 1)) L2.push({ k: cats.realestate.alpha > 0 ? 'good' : 'bad', h: cats.realestate.alpha > 0 ? 'Property pulled ahead' : 'Property held you back', b: 'Your real estate ended ' + f(Math.abs(cats.realestate.alpha), { auto: true }) + (cats.realestate.alpha > 0 ? ' ahead of' : ' behind') + ' the same money in the index. A mortgage multiplies whatever the property does, in both directions.' });
     if (cats.business && Math.abs(cats.business.alpha) > 0.03 * Math.max(res.nw, 1)) L2.push({ k: cats.business.alpha > 0 ? 'good' : 'bad', h: cats.business.alpha > 0 ? 'Your businesses earned their keep' : 'Your businesses lagged', b: 'They ended ' + f(Math.abs(cats.business.alpha), { auto: true }) + (cats.business.alpha > 0 ? ' ahead of' : ' behind') + ' the index. A small business can out-earn the market, but all of it rides on one location and one economy.' });
     if (cats.casino && s.tot.casinoBet > 0) L2.push({ k: 'bad', h: 'The casino took its cut', b: 'You bet ' + f(s.tot.casinoBet, { auto: true }) + ' in total. The odds said you would lose about ' + f(Math.round(s.tot.casinoEV), { auto: true }) + '. You actually ' + (s.tot.casinoWon >= s.tot.casinoBet ? 'won ' : 'lost ') + f(Math.abs(s.tot.casinoWon - s.tot.casinoBet), { auto: true }) + '. Play long enough and the two numbers meet.' });
-    if (cats.crypto && cats.crypto.alpha < -0.02 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: 'Fleececoin fleeced you', b: 'It ended ' + f(-cats.crypto.alpha, { auto: true }) + ' behind the index. With nothing underneath the price, you were betting on other buyers showing up.' });
+    if (cats.crypto && cats.crypto.alpha < -0.02 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: tape.dest.crypto.name + ' fleeced you', b: 'It ended ' + f(-cats.crypto.alpha, { auto: true }) + ' behind the index. With nothing underneath the price, you were betting on other buyers showing up.' });
     if (res.trades <= 5 && res.ratio > 0.95 && years >= 5) L2.push({ k: 'good', h: 'You barely touched it', b: 'Only ' + res.trades + ' trades all run. Doing little is underrated: no fees, almost no tax, and nothing to panic about.' });
     res.lessons = L2.slice(0, 5);
     return res;
   };
 
   // Bells earned for a finished run
-  BW.bellsFor = function (res, scen, played) {
+  BW.bellsFor = function (res, scen, played, dest) {
     if (played < 1) return 0;
     var perf = res.bankrupt ? 0.3 : Math.pow(clamp(res.ratio, 0.4, 2.5), 1.5);
-    return Math.max(1, Math.round(played * 1.2 * (scen.mult || 1) * perf));
+    return Math.max(1, Math.round(played * 1.2 * (scen.mult || 1) * ((dest && dest.mult) || 1) * perf));
   };
 
   // Collector cards: one per company, three finishes

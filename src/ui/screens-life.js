@@ -79,6 +79,24 @@
     tx.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Pay, interest, rent, business profit and gains on anything sold within a year: 22%. Dividends and gains on anything held a year or more: 15%. Nothing is taxed until you sell.' }));
     el.appendChild(tx);
 
+    el.appendChild(h('h3', { text: 'Where the money has gone this run' }));
+    var fl = h('div', { cls: 'card' }), F2 = function (k) { return s.flow[k] || 0; };
+    fl.appendChild(U.kvLive('Pay and benefits', function () { return f.mp(F2('pay')); }));
+    fl.appendChild(U.kvLive('Living costs', function () { return f.mp(F2('living')); }));
+    fl.appendChild(U.kvLive('Surprises, good and bad', function () { return f.mp(F2('life')); }));
+    fl.appendChild(U.kvLive('Dividends', function () { return f.mp(F2('dividends')); }));
+    fl.appendChild(U.kvLive('Interest earned', function () { return f.mp(F2('interest')); }));
+    fl.appendChild(U.kvLive('Card interest', function () { return f.mp(F2('cardint')); }));
+    fl.appendChild(U.kvLive('Student loan payments', function () { return f.mp(F2('loan')); }));
+    fl.appendChild(U.kvLive('Tax on investments', function () { return f.mp(F2('tax')); }));
+    fl.appendChild(U.kvLive('Trading costs (inside your buys and sells)', function () { return f.mp(-s.tot.fees); }));
+    fl.appendChild(U.kvLive('Property, all cash in and out', function () { return f.mp(F2('realestate')); }));
+    fl.appendChild(U.kvLive('Businesses, all cash in and out', function () { return f.mp(F2('business')); }));
+    if (s.tot.casinoBet) fl.appendChild(U.kvLive('Casino', function () { return f.mp(F2('casino')); }));
+    fl.appendChild(U.kvLive('Net put into investments', function () { return f.mp(F2('invest') + F2('cd')); }));
+    el.appendChild(fl);
+    el.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Every cent that has ever moved in or out of your cash is in one of these lines. Add them to your starting cash and you get the cash you have now.' }));
+
     el.appendChild(h('h3', { text: 'Autopilot' }));
     var ap = h('div', { cls: 'list' });
     ap.appendChild(h('button', { cls: 'item', tap: function () { S.autopilot(redraw); } }, h('span', { cls: 'grow' }, h('div', { cls: 't1', text: 'Auto-invest each payday' }), h('div', { cls: 't2', style: 'white-space:normal', live: function () { return s.auto.on && s.auto.alloc.length ? s.auto.alloc.map(function (a) { return a.pct + '% ' + G.tape.assets[a.id].tkr; }).join(', ') : 'Off'; } })), h('span', { html: U.icon('chev'), style: 'width:20px;color:var(--ink3)' })));
@@ -246,7 +264,7 @@
     }
     el.appendChild(h('h3', { text: 'For sale' }));
     var list = h('div', { cls: 'list' });
-    BW.BIZ.forEach(function (b) {
+    G.tape.dest.biz.forEach(function (b) {
       if (r._biz(b.id)) return;
       var cost = h('div', { cls: 'v1' }), row;
       U.on(function () { var c = r.bizCost(b); cost.textContent = f.ms(c); cost.className = 'v1' + (c > s.cash ? ' mute' : ''); });

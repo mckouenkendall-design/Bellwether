@@ -211,11 +211,11 @@
     if (a.kind === 'stock') {
       var s = tape.sectors.filter(function (x) { return x.id === a.sector; })[0];
       var k = BW.hashStr(a.id); hue = (s ? s.hue : 200) + (k % 31) - 15; shape = LOGO_SHAPES[k % 4];
-    } else if (a.kind === 'fund') { hue = 44; sat = 70; lum = 38; shape = 'round'; txt = 'H'; }
+    } else if (a.kind === 'fund') { hue = 44; sat = 70; lum = 38; shape = 'round'; txt = a.tkr.slice(0, 1); }
     else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; }
     else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.slice(1, 3); }
-    else if (a.kind === 'cmdty') { hue = { gold: 45, oil: 20, copper: 18, wheat: 52 }[a.id] || 30; sat = a.id === 'oil' ? 12 : 62; lum = a.id === 'oil' ? 22 : 40; shape = 'leaf'; txt = a.name.slice(0, 2); }
-    else if (a.kind === 'crypto') { hue = 285; sat = 60; lum = 48; shape = 'round'; txt = 'F'; }
+    else if (a.kind === 'cmdty') { hue = { gold: 45, oil: 20, copper: 18, wheat: 52 }[a.id] || 30; sat = a.id === 'oil' ? 12 : 62; lum = a.id === 'oil' ? 22 : 40; shape = 'leaf'; var w = a.name.split(' '); txt = w.length > 1 ? w[0].charAt(0) + w[1].charAt(0) : a.name.slice(0, 2); }
+    else if (a.kind === 'crypto') { hue = 285; sat = 60; lum = 48; shape = 'round'; txt = a.tkr.slice(0, 1); }
     return U.h('span', { cls: 'logo ' + shape + (size ? ' ' + size : ''), style: 'background:hsl(' + hue + ' ' + sat + '% ' + lum + '%)', text: txt });
   };
 
@@ -273,8 +273,8 @@
     cmdty: ['Commodity', 'A raw material such as gold, oil or wheat. It earns no profit and pays nothing. You only make money if the price goes up.'],
     target: ['Price target', 'An analyst\'s estimate of what the shares are really worth. Useful, but often wrong, and analysts tend to raise targets after a stock has already risen.'],
     diversify: ['Spreading your bets', 'Owning many different things so that one disaster cannot sink you. It is the only free protection in investing.'],
-    pme: ['Ahead of or behind the index', 'For every dollar you put into something, we work out what that same dollar would be worth today if you had put it in the Herd 30 fund on the same day instead. The difference is how much your choice helped or hurt.'],
-    herd: ['Herd 30', 'The index: all the companies on the exchange, weighted by size. When people say "the market went up", this is the number they mean.'],
+    pme: ['Ahead of or behind the index', 'For every dollar you put into something, we work out what that same dollar would be worth today if you had put it in the index fund on the same day instead. The difference is how much your choice helped or hurt.'],
+    herd: ['The index', 'All the companies on the exchange, weighted by size. On Earth it is called the Herd 30. When people say "the market went up", this is the number they mean.'],
     bells: ['Bells', 'What you earn for finishing runs. More years, harder scenarios and beating Dolly all earn more. Spend them on permanent unlocks.']
   };
   U.explain = function (key) {

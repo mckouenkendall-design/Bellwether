@@ -93,7 +93,7 @@
       var secDef = null, i;
       for (i = 0; i < ctx.dest.sectors.length; i++) if (ctx.dest.sectors[i].id === tpl.sector) secDef = ctx.dest.sectors[i];
       var co = {
-        id: tpl.id, tkr: tpl.tkr, name: tpl.name, sector: tpl.sector, arche: tpl.arche, desc: tpl.desc, tpl: tpl,
+        id: tpl.id, tkr: tpl.tkr, name: tpl.name, sector: tpl.sector, like: secDef.like || secDef.id, arche: tpl.arche, desc: tpl.desc, tpl: tpl,
         start: d, end: -1, endPx: 0, endWhy: null,
         rev: tpl.rev * dexp(0.22 * r.n()),
         omBar: tpl.om * (1 + 0.1 * r.n()), om: 0, omMature: tpl.omMature == null ? null : tpl.omMature,
@@ -253,10 +253,11 @@
       }
       if (co.lev < 0.5) co.flags.warned = 0;
       co.levS += (co.lev - co.levS) * 0.03;
-      if (co.levS > 0.78) {
-        var h = Math.min(0.02, 0.004 * (co.levS - 0.78) / 0.15 + (co.levS > 1.2 ? 0.02 : 0));
+      var dng = ctx.dest.danger || 1, thr = 0.78 - 0.05 * (dng - 1);
+      if (co.levS > thr) {
+        var h = Math.min(0.02, dng * 0.004 * (co.levS - thr) / 0.15 + (co.levS > 1.2 ? 0.02 : 0));
         if (rEv.chance(h)) {
-          var pRescue = clamp(0.55 + 1.2 * ctx.st.S - 0.2 * co.distressed, 0.1, 0.85);
+          var pRescue = clamp(0.55 + 1.2 * ctx.st.S - 0.2 * co.distressed - 0.1 * (dng - 1), 0.1, 0.85);
           var price = Math.max(0.05, co.pc[d - 1] / 100), mcap = price * co.sh;
           if (d <= ctx.W) {
             // before the game starts nobody is allowed to vanish: lenders swap debt for shares instead
@@ -271,7 +272,7 @@
         }
       }
       // cash-burning growth companies top up by selling shares while the market lets them
-      if (co.omMature != null && co.lev > 0.3 && co.levS <= 0.78 && ctx.st.S > -0.1 && rEv.chance(0.02)) {
+      if (co.omMature != null && co.lev > 0.3 && co.levS <= thr && ctx.st.S > -0.1 && rEv.chance(0.02)) {
         var p2 = Math.max(0.2, co.pc[d - 1] / 100), amt = 0.6 * Math.max(co.debt, 0.05 * co.rev);
         shock(co, d, function (c) { c.sh += amt / (0.93 * p2); c.debt -= amt; }, 0.9, 1.2);
         postCo(co, d, { k: 'raise', src: 'FILING', sev: 2, tr: 'real', h: co.name + ' raises ' + money(amt) + ' selling new shares',
@@ -320,7 +321,7 @@
       postCo(co, d, { k: 'pricewar', src: 'WIRE', sev: sevOf(dl), tr: 'real', h: P(['A rival undercuts ', 'New competition squeezes ', 'Price war hits ']) + co.name,
         b: 'To keep customers it is matching lower prices. Sales may hold, but less of each sale is profit.' });
     });
-    ev('recall', function (co) { return co.sector === 'bank' || co.sector === 'util' ? 0.2 : 0.7; }, function (co, d) {
+    ev('recall', function (co) { return co.like === 'bank' || co.like === 'util' ? 0.2 : 0.7; }, function (co, d) {
       var c1 = rEv.range(0.01, 0.03), x = rEv.range(0.003, 0.012);
       var dl = shock(co, d, function (c) { c.oneOff += c1 * c.rev; c.debt += c1 * c.rev * 0.5; c.g -= x; });
       postCo(co, d, { k: 'recall', src: 'WIRE', sev: sevOf(dl), tr: 'real', h: co.name + ' ' + P(['recalls a faulty product', 'pulls a product from sale', 'halts shipments over a defect']),
@@ -357,7 +358,7 @@
       var c1 = rEv.range(0.006, 0.022);
       var dl = shock(co, d, function (c) { c.oneOff += c1 * c.rev; c.debt += c1 * c.rev * 0.5; }, 1.2, 2.4);
       var what = { tech: 'a three-day outage', health: 'a plant shutdown', energy: 'a refinery fire', bank: 'a costly systems failure', staples: 'a factory fire', retail: 'storm damage across its sites',
-        indust: 'a strike at its main plant', util: 'storm damage to its network', mater: 'a flooded mine', media: 'a costly outage' }[co.sector] || 'an accident';
+        indust: 'a strike at its main plant', util: 'storm damage to its network', mater: 'a flooded mine', media: 'a costly outage' }[co.like] || 'an accident';
       postCo(co, d, { k: 'outage', src: 'WIRE', sev: sevOf(dl), tr: 'noise', h: co.name + ' hit by ' + what,
         b: 'A one-time cost of about ' + money(c1 * co.rev) + '. Painful this quarter, but it does not change what the business earns in a normal year.' });
     });
@@ -399,21 +400,22 @@
         } else if (dd > ctx.W) bankrupt(co, dd, 'The review found the profits were invented.');
       });
     });
-    ev('trial', function (co) { return co.tpl.trials ? 2.2 : co.sector === 'health' ? 0.8 : 0; }, function (co, d) {
+    ev('trial', function (co) { return co.tpl.trials ? 2.2 : co.like === 'health' ? 0.8 : 0; }, function (co, d) {
+      var tw = co.tpl.trial || { due: 'trial results', what: null, win: 'drug succeeds in final trial', fail: 'drug fails in final trial', winB: 'Approval should follow, and with it years of new sales.', failB: 'Years of research written off. The sales investors were counting on will not arrive.' };
       var big = !!co.tpl.trials, odds = rEv.range(0.35, 0.65), when = rEv.int(60, 150);
-      postCo(co, d, { k: 'trialset', src: 'WIRE', sev: big ? 2 : 1, tr: 'pending', h: co.name + ' trial results due in about ' + Math.round(when / 20) + ' months',
-        b: 'Its ' + P(['heart', 'cancer', 'diabetes', 'migraine', 'arthritis']) + ' treatment is in final testing. Analysts put the odds of success near ' + pct(odds + 0.08 * rEv.n()) + '.' + (big ? ' For a company this size, the result decides its future.' : '') });
+      postCo(co, d, { k: 'trialset', src: 'WIRE', sev: big ? 2 : 1, tr: 'pending', h: co.name + ' ' + tw.due + ' due in about ' + Math.round(when / 20) + ' months',
+        b: (tw.what || 'Its ' + P(['heart', 'cancer', 'diabetes', 'migraine', 'arthritis']) + ' treatment is in final testing.') + ' Analysts put the odds of success near ' + pct(clamp(odds + 0.08 * rEv.n(), 0.1, 0.9)) + '.' + (big ? ' For a company this size, the result decides its future.' : '') });
       ctx.sched(d + when, function (dd) {
         if (co.end >= 0) return;
         // sized so the average outcome is worth nothing: a fair coin with big faces
         var U = Math.min(big ? rEv.range(0.25, 0.5) : rEv.range(0.03, 0.07), dlog(1 + 0.8 * (1 - odds) / odds));
         if (rEv.chance(odds)) {
           shock(co, dd, function (c) { c.g += U * 0.6; if (c.omMature != null) { c.bel += 0.08; c.succ += 0.08; } }, 0.85, 1.2);
-          postCo(co, dd, { k: 'trialwin', src: 'WIRE', sev: big ? 3 : 2, tr: 'real', h: co.name + ' drug succeeds in final trial', b: 'Approval should follow, and with it years of new sales.' });
+          postCo(co, dd, { k: 'trialwin', src: 'WIRE', sev: big ? 3 : 2, tr: 'real', h: co.name + ' ' + tw.win, b: tw.winB });
         } else {
           var D = -dlog(1 - odds * (dexp(U) - 1) / (1 - odds));
           shock(co, dd, function (c) { c.g -= D * 0.6; if (c.omMature != null) { c.bel -= 0.08; c.succ -= 0.08; } c.oneOff += 0.02 * c.rev; }, 0.85, 1.2);
-          postCo(co, dd, { k: 'trialfail', src: 'WIRE', sev: big ? 3 : 2, tr: 'real', h: co.name + ' drug fails in final trial', b: 'Years of research written off. The sales investors were counting on will not arrive.' });
+          postCo(co, dd, { k: 'trialfail', src: 'WIRE', sev: big ? 3 : 2, tr: 'real', h: co.name + ' ' + tw.fail, b: tw.failB });
         }
       });
     });
@@ -423,13 +425,13 @@
       postCo(co, d, { k: 'hit', src: 'WIRE', sev: sevOf(dl), tr: 'real', h: good ? co.name + ' has a runaway hit' : 'Big release from ' + co.name + ' flops',
         b: good ? 'Its latest release is breaking records. Hits like this pay for years of misses.' : 'It cost a fortune and nobody came. One flop is normal in this business. A string of them is not.' });
     });
-    ev('patent', function (co) { return co.sector === 'health' && !co.tpl.trials ? 0.7 : co.sector === 'tech' ? 0.3 : 0; }, function (co, d) {
+    ev('patent', function (co) { return co.like === 'health' && !co.tpl.trials ? 0.7 : co.like === 'tech' ? 0.3 : 0; }, function (co, d) {
       var x = rEv.range(0.015, 0.04);
       var dl = shock(co, d, function (c) { c.g -= x; c.gBar -= x * 0.3; });
       postCo(co, d, { k: 'patent', src: 'WIRE', sev: sevOf(dl), tr: 'real', h: 'Key patent at ' + co.name + ' is about to run out',
         b: 'Once it expires, rivals can sell cheap copies. Sales of that product usually fall fast.' });
     });
-    ev('breach', function (co) { return co.sector === 'tech' || co.sector === 'bank' || co.sector === 'retail' ? 0.5 : 0.1; }, function (co, d) {
+    ev('breach', function (co) { return co.like === 'tech' || co.like === 'bank' || co.like === 'retail' ? 0.5 : 0.1; }, function (co, d) {
       co.hype -= rEv.range(0.03, 0.07);
       var c1 = rEv.range(0.003, 0.01);
       shock(co, d, function (c) { c.oneOff += c1 * c.rev; }, 1, 1.5);

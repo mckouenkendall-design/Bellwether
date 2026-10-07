@@ -10,20 +10,6 @@
   BW.REG_NAMES = ['Expansion', 'Boom', 'Slowdown', 'Recession', 'Recovery'];
   BW.WARMUP = 720;
 
-  var PROP = BW.PROP_TYPES = [
-    { id: 'condo', name: 'One-bed condo', v: [70, 125], y: [0.105, 0.13], n: 1.2, units: 1 },
-    { id: 'house', name: 'Starter house', v: [140, 240], y: [0.088, 0.108], n: 1.5, units: 1 },
-    { id: 'duplex', name: 'Duplex', v: [230, 360], y: [0.1, 0.125], n: 1.0, units: 2 },
-    { id: 'fourplex', name: 'Fourplex', v: [420, 680], y: [0.105, 0.13], n: 0.7, units: 4 },
-    { id: 'apts', name: 'Apartment building', v: [1300, 3800], y: [0.105, 0.125], n: 0.5, units: 18 },
-    { id: 'retail', name: 'Retail strip', v: [900, 2600], y: [0.1, 0.125], n: 0.4, units: 6, com: true },
-    { id: 'warehouse', name: 'Warehouse', v: [2200, 7000], y: [0.09, 0.115], n: 0.3, units: 1, com: true },
-    { id: 'tower', name: 'Office tower', v: [18000, 70000], y: [0.085, 0.11], n: 0.2, units: 40, com: true }
-  ];
-  var STREETS = ['Larkhill Lane', 'Coppergate', 'Fennel Row', 'Old Mill Road', 'Hawthorn Close', 'Quarry Street', 'Tanners Walk', 'Bellfield Avenue', 'Marsh Lane', 'Cinder Hill',
-    'Ropewalk', 'Saffron Court', 'Juniper Way', 'Foundry Road', 'Wren Street', 'Harbour View', 'Thistle Bank', 'Orchard Rise', 'Ember Street', 'Kingfisher Drive',
-    'Plover Place', 'Station Approach', 'Weavers Yard', 'Elmstead Road', 'Pike Street', 'Canal Side', 'Heron Court', 'Lantern Row', 'Barley Close', 'Northgate'];
-
   function r2(x) { return Math.round(x * 100) / 100; }
   function f1(x) { return x.toFixed(1); }
 
@@ -34,6 +20,9 @@
     var seed = cfg.seed >>> 0;
     function rng(name) { return new RNG(mix(seed, name, BW.ENGINE_VERSION, dest.id)); }
     var rM = rng('macro'), rS = rng('sent'), rSec = rng('sectors'), rC = rng('cmdty'), rB = rng('bonds'), rNw = rng('macro-news');
+    // One random draw per headline, but never the same wording twice running for the same kind of story.
+    var cmLast = {};
+    function cmHead(kind) { var arr = dest.cmNews[kind][0], i = Math.floor(rNw.next() * arr.length); if (arr.length > 1 && cmLast[kind] === i) i = (i + 1) % arr.length; cmLast[kind] = i; return arr[i]; }
     var vm = (mods.volMult || 1) * dest.volMult, gb = (mods.growthBias || 0) + dest.growthAdd * 100;
 
     var F = function () { return new Float32Array(N); };
@@ -116,18 +105,7 @@
       post(d, { sc: 's', sec: s.id, k: 'mania', src: 'WIRE', sev: 2, tr: 'mixed', h: 'Investors pile into ' + def.name + ' stocks',
         b: 'Money is pouring into the sector and prices are rising faster than profits. That can go on for years. It has never gone on forever.' });
     }
-    var SECEV = {
-      tech: [['Businesses rush to upgrade their systems', 'Corporate tech budgets are up sharply this year.', 3, 0.02, 0.03], ['Chip shortage slows the whole tech supply chain', 'Factories cannot get parts. Sales that would have happened this year slip into next.', -3, -0.03, -0.03], ['Governments move to regulate big tech', 'New rules on data and competition are being drafted. Compliance will cost money.', -1, -0.04, -0.05]],
-      health: [['Government proposes caps on drug prices', 'If passed, drug makers would earn less on their best sellers.', -1.5, -0.06, -0.06], ['Ageing population lifts demand for treatment', 'Hospitals report record volumes.', 2.5, 0.02, 0.02], ['Regulator speeds up approvals for new medicines', 'New drugs will reach the market sooner.', 2, 0.02, 0.04]],
-      energy: [['New pipelines approved after years of delay', 'Producers will be able to ship more, more cheaply.', 2, 0.04, 0.03], ['Windfall tax proposed on energy profits', 'Lawmakers want a share of high energy profits.', 0, -0.08, -0.05], ['Mild winter leaves fuel stockpiles full', 'Less heating fuel was burned than expected.', -3, -0.03, -0.02]],
-      bank: [['Regulators order banks to hold more capital', 'Safer banks, but less money to lend and lower returns.', -1, -0.05, -0.05], ['Loan demand surges as businesses expand', 'Banks report their busiest lending in years.', 3.5, 0.03, 0.03], ['Bad loans tick up across the industry', 'More borrowers are falling behind on payments.', -1, -0.07, -0.05]],
-      staples: [['Shoppers trade down to store brands', 'Big-name brands are losing shelf space to cheaper copies.', -2, -0.03, -0.02], ['Food makers push through price rises', 'Shoppers are paying up without buying less.', 2, 0.04, 0.02], ['Packaging and shipping costs jump', 'Getting goods to shelves costs more this year.', 0, -0.05, -0.02]],
-      retail: [['Holiday shopping breaks records', 'Shoppers spent more than any forecast expected.', 4, 0.03, 0.04], ['Consumers pull back on spending', 'Surveys show households are nervous and saving more.', -4, -0.04, -0.05], ['Travel bookings hit an all-time high', 'Flights and hotels are selling out months ahead.', 3, 0.03, 0.03]],
-      indust: [['Government unveils a big building programme', 'Roads, bridges and rail will be rebuilt over a decade.', 4, 0.02, 0.05], ['Factory orders fall for a third month', 'Manufacturers are seeing fewer new orders.', -4, -0.03, -0.04], ['Shipping costs ease as ports clear', 'Bottlenecks that raised costs last year are gone.', 1, 0.04, 0.02]],
-      util: [['Regulators approve higher power bills', 'Utilities may charge more to fund network upgrades.', 1.5, 0.05, 0.03], ['Heatwave strains the power grid', 'Record demand, record repair bills.', 1, -0.04, -0.02], ['Regulator rejects rate increases', 'Utilities must absorb higher costs themselves.', -1, -0.06, -0.04]],
-      mater: [['Building boom abroad lifts demand for raw materials', 'Orders for metals and chemicals are surging.', 4, 0.04, 0.05], ['New environmental rules raise mining costs', 'Cleaner operations will cost more to run.', 0, -0.06, -0.03], ['Stockpiles of raw materials pile up', 'Too much supply chasing too few buyers.', -4, -0.04, -0.04]],
-      media: [['Advertisers boost budgets', 'Companies are spending more to reach customers.', 3.5, 0.04, 0.04], ['Ad spending dries up', 'Marketing budgets were the first thing cut.', -4, -0.05, -0.05], ['Phone networks start a price war', 'Carriers are cutting prices to steal each other\'s customers.', -2, -0.05, -0.04]]
-    };
+    var SECEV = JSON.parse(JSON.stringify(dest.secEvents || {}));
 
     // centre each sector's events so that no sector is doomed or blessed on average
     Object.keys(SECEV).forEach(function (k) {
@@ -150,11 +128,11 @@
       mkAsset('bcrp', 'BCRP', 'Corporate Bond Fund', 'bond', { dur: 6, desc: 'Loans to large, healthy companies. Pays more interest than government bonds because a company can fail. Sags in recessions.', cost: 5 }),
       mkAsset('bjnk', 'BJNK', 'High-Yield Bond Fund', 'bond', { dur: 4, desc: 'Loans to shaky companies at high interest. Pays well in good times. In a recession some borrowers go bust and the fund falls almost like a stock.', cost: 8 })
     ];
-    var cmd = dest.commodities.map(function (c) { return mkAsset(c.id, c.tkr, c.name, 'cmdty', { desc: c.desc, unit: c.unit, p0: c.p0, cost: 25 }); });
+    var cmd = dest.commodities.map(function (c) { return mkAsset(c.id, c.tkr, c.name, 'cmdty', { desc: c.desc, unit: c.unit, p0: c.p0, cost: 25 }); }); // ids are always oil, gold, copper, wheat: the roles they play in the economy
     var crypto = mkAsset(dest.crypto.id, dest.crypto.tkr, dest.crypto.name, 'crypto', { desc: dest.crypto.desc, cost: 75 });
     var secFunds = {};
     secList.forEach(function (s) {
-      secFunds[s.id] = mkAsset('sf_' + s.id, 'S' + s.id.slice(0, 3).toUpperCase(), s.name + ' Sector Fund', 'sfund', { sector: s.id, desc: 'Owns every ' + s.name + ' company on the exchange. A way to bet on the sector without picking a winner inside it.', fee: 0.0035, cost: 5, f: 50, acc: 0 });
+      secFunds[s.id] = mkAsset('sf_' + s.id, 'S' + s.id.slice(0, 4).toUpperCase(), s.name + ' Sector Fund', 'sfund', { sector: s.id, desc: 'Owns every ' + s.name + ' company on the exchange. A way to bet on the sector without picking a winner inside it.', fee: 0.0035, cost: 5, f: 50, acc: 0 });
     });
 
     var cm = { oil: 0.1 * rC.n(), gold: 0.08 * rC.n(), copper: 0.1 * rC.n(), wheat: 0.1 * rC.n() };
@@ -209,7 +187,7 @@
         stepR = newRate - st.rate; st.rate = newRate;
         if (stepR !== 0) {
           var big = Math.abs(stepR) >= 0.5, turn = st.lastMove !== 0 && (stepR > 0) !== (st.lastMove > 0);
-          post(d, { sc: 'm', k: 'rate', src: 'DATA', sev: big || turn ? 3 : 2, tr: 'real',
+          post(d, { sc: 'm', k: 'rate', src: 'DATA', sev: big || turn ? 3 : 2, tr: 'real', stop: turn,
             h: cap(dest.reserve) + (stepR > 0 ? ' raises' : ' cuts') + ' interest rates to ' + st.rate.toFixed(2) + '%',
             b: (stepR > 0 ? 'Borrowing gets more expensive, which cools spending and inflation. Higher rates usually weigh on stock and bond prices, and savings accounts pay more.'
               : 'Borrowing gets cheaper to encourage spending. Lower rates usually lift stock and bond prices, and savings accounts pay less.') +
@@ -270,20 +248,20 @@
           post(d, { sc: 's', sec: s.id, k: 'sector', src: 'WIRE', sev: 2, tr: 'real', h: e[0], b: e[1] + ' Affects every ' + secList[i].name + ' company to some degree.' });
         }
       }
-      for (i = 0; i < manias.length; i++) if (manias[i].d === d) startMania(sec[manias[i].sector], d, manias[i].dur);
+      for (i = 0; i < manias.length; i++) if (manias[i].d === d) { var ms = sec[manias[i].sector] || sec[dest.maniaSector]; if (ms) startMania(ms, d, manias[i].dur); }
 
       // ----- commodities
       cm.oil += 0.35 * (0.05 * st.gap - cm.oil) * DT + 0.27 * SQDT * rC.n();
       if (d > 20 && rC.chance(DT / 6)) { var jo = rC.range(0.2, 0.45); cm.oil += jo;
-        post(d, { sc: 'm', k: 'oilup', src: 'WIRE', sev: 3, tr: 'real', h: rNw.pick(['Oil spikes as producers cut supply', 'Conflict near key shipping lane sends oil soaring', 'Oil jumps after export ban']), b: 'Fuel costs feed into almost every price. Expect inflation to rise, energy companies to profit, and airlines, shippers and factories to pay more.' }); }
+        post(d, { sc: 'm', k: 'oilup', src: 'WIRE', sev: 3, tr: 'real', h: cmHead('oilup'), b: dest.cmNews.oilup[1] }); }
       if (d > 20 && rC.chance(DT / 9)) { var jd = rC.range(0.15, 0.35); cm.oil -= jd;
-        post(d, { sc: 'm', k: 'oildown', src: 'WIRE', sev: 2, tr: 'real', h: rNw.pick(['Oil slumps as producers flood the market', 'Glut sends oil prices tumbling']), b: 'Cheap fuel is a tax cut for everyone except those who sell it. Good for inflation, bad for energy companies.' }); }
+        post(d, { sc: 'm', k: 'oildown', src: 'WIRE', sev: 2, tr: 'real', h: cmHead('oildown'), b: dest.cmNews.oildown[1] }); }
       var realY = y10 - st.infl;
       cm.gold += 0.5 * ((-0.05 * (realY - 0.8) - 0.45 * st.S + 0.05 * (st.infl - 2.2)) - cm.gold) * DT + 0.13 * SQDT * rC.n();
       cm.copper += 0.5 * (0.07 * st.gap - cm.copper) * DT + 0.21 * SQDT * rC.n();
       cm.wheat += 0.9 * (0 - cm.wheat) * DT + 0.22 * SQDT * rC.n();
       if (d > 20 && rC.chance(DT / 5)) { cm.wheat += rC.range(0.2, 0.4);
-        post(d, { sc: 'm', k: 'wheat', src: 'WIRE', sev: 1, tr: 'real', h: rNw.pick(['Drought scorches the grain belt', 'Floods wipe out wheat harvest']), b: 'Wheat prices jump. Food makers pay more for ingredients for a season or two.' }); }
+        post(d, { sc: 'm', k: 'wheat', src: 'WIRE', sev: 1, tr: 'real', h: cmHead('wheat'), b: dest.cmNews.wheat[1] }); }
       var cpiR = M.cpi[d], drag = dexp(-0.004 * d * DT);
       if (!cmP.oilHist) cmP.oilHist = new Float64Array(N);
       for (i = 0; i < cmd.length; i++) {
@@ -440,10 +418,7 @@
     for (d = W + 1; d < N; d++) {
       if (M.regime[d] === REG.REC && M.regime[d - 1] !== REG.REC && rL.chance(0.4)) life.jobLoss.push({ d: d + rL.int(20, 120), len: rL.int(3, 7) });
     }
-    var SHOCKS = [['car', 'The car needs a new transmission', 900, 2600], ['medical', 'A hospital visit your insurance only partly covers', 1200, 5200], ['vet', 'Emergency surgery for the dog', 600, 2400],
-      ['laptop', 'Your laptop died the week of a deadline', 700, 1600], ['family', 'A family member needs help with rent', 800, 3000], ['dental', 'A cracked tooth and a crown', 600, 1900],
-      ['boiler', 'The heating failed in midwinter', 1000, 3800], ['move', 'Your landlord sold up and you have to move', 1500, 3600], ['fine', 'A stack of parking tickets and a tow', 300, 900], ['wedding', 'Three weddings in one summer', 900, 2400]];
-    var WIND = [['bonus', 'A surprise bonus at work', 800, 4200], ['refund', 'A tax refund you were not expecting', 400, 1800], ['gift', 'A relative left you some money', 2000, 9000], ['sold', 'You sold some old stuff online', 300, 1100]];
+    var SHOCKS = dest.shocks, WIND = dest.windfalls;
     for (d = W + 30; d < N - 10; d++) {
       if (rL.chance(DT * 0.55)) { var sh = rL.pick(SHOCKS); life.shocks.push({ d: d, kind: sh[0], text: sh[1], amt: -Math.round(rL.range(sh[2], sh[3]) * M.cpi[d] / M.cpi[W]) * 100 }); }
       if (rL.chance(DT * 0.2)) { var wn = rL.pick(WIND); life.shocks.push({ d: d, kind: wn[0], text: wn[1], amt: Math.round(rL.range(wn[2], wn[3]) * M.cpi[d] / M.cpi[W]) * 100 }); }
@@ -453,7 +428,8 @@
     /* ---------- property listings ---------- */
     var rP = rng('listings'), listings = [], lid = 0;
     var MOTIV = ['Seller is relocating for work and wants it gone.', 'Estate sale. The heirs want a quick, clean deal.', 'Owner is behind on payments.', 'Landlord is retiring and selling everything.', 'Second time on the market after a buyer pulled out.'];
-    var types = dest.propTypes || PROP;
+    var STREETS = dest.streets;
+    var types = dest.propTypes;
     for (d = W - 60; d < N - 20; d += 5) {
       for (i = 0; i < types.length; i++) {
         var pt = types[i];

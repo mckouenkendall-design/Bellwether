@@ -13,9 +13,11 @@
   }
   C.setup = setup;
   function niceStep(span, n) { var raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
-  function fmtAxis(v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + 'B' : a >= 1e6 ? (v / 1e6).toFixed(a >= 1e7 ? 0 : 1) + 'M' : a >= 1e4 ? Math.round(v / 1e3) + 'k' : a >= 100 ? Math.round(v).toString() : a >= 10 ? v.toFixed(1) : v.toFixed(2); }
+  function trimZ(t) { return t.indexOf('.') < 0 ? t : t.replace(/0+$/, '').replace(/\.$/, ''); }
+  function commas(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function fmtAxis(v) { var a = Math.abs(v); return a >= 1e9 ? trimZ((v / 1e9).toFixed(2)) + 'B' : a >= 1e6 ? trimZ((v / 1e6).toFixed(a >= 1e7 ? 1 : 2)) + 'M' : a >= 1e4 ? trimZ((v / 1e3).toFixed(a >= 1e5 ? 1 : 2)) + 'k' : a >= 1000 ? (v < 0 ? '-' : '') + commas(Math.round(a)) : a >= 100 ? Math.round(v).toString() : a >= 10 ? v.toFixed(1) : v.toFixed(2); }
   C.fmtAxis = fmtAxis;
-  C.fmtUsd = function (v) { return (v < 0 ? '-$' : '$') + fmtAxis(Math.abs(v)); };
+  C.fmtUsd = function (v) { return Math.abs(v) < 0.005 ? '$0' : (v < 0 ? '-$' : '$') + fmtAxis(Math.abs(v)); };
   function bucketFor(range) { var b = range / 56; return b <= 1.2 ? 1 : b <= 6 ? 5 : b <= 24 ? 20 : b <= 70 ? 60 : b <= 140 ? 120 : 240; }
   function xLabel(rel, bucket, span) { var p = BW.dateParts(rel); if (rel < 0 && (bucket >= 20 || span > 300)) return Math.ceil(-rel / 240) + 'y before'; return bucket >= 60 || span > 700 ? 'Y' + p.year : bucket >= 5 ? p.mname + (span > 200 ? ' Y' + p.year : '') : p.mname + ' ' + p.day; }
 
@@ -52,7 +54,7 @@
       var a = o.asset, H = o.height || 250, S = setup(cv, H), g = S.g, w = S.w;
       var data = build(), bars = data.bars, n = bars.length;
       if (!n) return;
-      var padR = 50, padL = 14, padT = 22, volH = o.vol ? 34 : 0, padB = 32 + volH;
+      var padR = 50, padL = 14, padT = o.mode === 'candle' && w < 520 ? 42 : 22, volH = o.vol ? 34 : 0, padB = 32 + volH;
       var pw = w - padL - padR, ph = H - padT - padB;
       var lo = 1e15, hi = -1, i, k;
       for (i = 0; i < n; i++) { if (bars[i].l < lo) lo = bars[i].l; if (bars[i].h > hi) hi = bars[i].h; }

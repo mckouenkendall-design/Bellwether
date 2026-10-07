@@ -54,7 +54,7 @@
       c.d = r.s.d; c.stamp = ui.stamp;
       c.nw = r.nw(); c.liq = r.liq(); c.dnw = G.dolly.nw(); c.dliq = G.dolly.liq();
       c.lead = c.liq - c.dliq;
-      c.leadTxt = c.dliq > 500000 && c.liq > 0 ? (c.lead >= 0 ? 'ahead ' : 'behind ') + f.pct(Math.abs(c.liq / c.dliq - 1)) : (c.lead >= 0 ? 'ahead ' : 'behind ') + f.ms(Math.abs(c.lead));
+      c.leadTxt = Math.abs(c.lead) < 2500 ? 'level' : c.dliq > 500000 && c.liq > 0 ? (c.lead >= 0 ? 'ahead ' : 'behind ') + f.pct(Math.abs(c.liq / c.dliq - 1)) : (c.lead >= 0 ? 'ahead ' : 'behind ') + f.ms(Math.abs(c.lead));
     }
     return c;
   };
@@ -128,6 +128,7 @@
       });
     });
   }
+  var STOP = { bust: 1, bear: 1, bear2: 1, crashday: 1, oilup: 1, housebust: 1, gdp: 1 };
   var SRC_NAME = App.SRC_NAME = { FILING: 'Filing', DATA: 'Official', WIRE: 'Wire', RUMOR: 'Rumor', OPINION: 'Opinion' };
 
   /* ---------- navigation ---------- */
@@ -169,7 +170,7 @@
     var r = G.run, s = r.s, tape = G.tape;
     var evs = r.stepDay();
     if (!G.dolly.s.done) G.dolly.stepDay();
-    var i, e, pauseWhy = null;
+    var i, e, pauseWhy = null, pauseNews = null;
     // the day's news
     var cnt = T.newsCount(tape, s.d);
     for (i = ui.newsSeen; i < cnt; i++) {
@@ -179,7 +180,8 @@
       else if (!ui.tick || s.d - ui.tick.d > 3) ui.tick = n;
       if (n.sev >= 3 && (n.sc === 'm' || mine)) {
         BW.Audio.play(n.k === 'bust' || n.k === 'crashday' || n.k === 'bear2' ? 'rumble' : 'big');
-        if (G.meta.set.autoPause && !manual) pauseWhy = n;
+        // stop the clock only for the stories that change what you should do, and never at the fastest speeds
+        if (G.meta.set.autoPause && !manual && ui.speed <= 4 && (mine || n.stop || STOP[n.k]) && !pauseWhy) { pauseWhy = n; pauseNews = n; }
       } else if (mine && ui.speed <= 2) BW.Audio.play('news');
     }
     ui.newsSeen = cnt;
@@ -210,7 +212,8 @@
     }
     if ((s.d - s.day0) % 240 === 0 && s.d > s.day0 && !s.done) { BW.Audio.play('year'); if (s.props.length > (s.st.maxProps || 0)) s.st.maxProps = s.props.length; }
     if (s.props.some(function (p) { return p.type === 'tower'; })) s.st.tower = 1;
-    if (pauseWhy && !manual && !ui.paused) { ui.paused = true; ui.acc = 0; }
+    if (pauseWhy && !manual && !ui.paused) { ui.paused = true; ui.acc = 0;
+      if (pauseNews) U.toast(pauseNews.h, { kind: 'brass', sub: 'Paused. Tap to read, or press play to carry on.', ms: 6000, onTap: function () { App.go('news'); } }); }
     ui.needSave = true;
     if (s.done) { ui.paused = true; setTimeout(function () { BW.Screens.finish(); }, 400); }
     return pauseWhy;
@@ -234,7 +237,8 @@
   App.startRun = function (o) {
     var scen = BW.SCEN_BY[o.scen], fair = o.mode !== 'open';
     var perks = BW.perksFor(G.meta, fair);
-    var cfg = { seed: o.seed >>> 0, scen: scen.id, dest: 'earth', years: scen.years, mode: o.mode, code: o.code || BW.makeCode(scen.id, 'earth', o.seed), date: o.date || null, perks: perks, ev: BW.ENGINE_VERSION };
+    var dest = o.dest && BW.DEST[o.dest] ? o.dest : 'earth';
+    var cfg = { seed: o.seed >>> 0, scen: scen.id, dest: dest, years: scen.years, mode: o.mode, code: o.code || BW.makeCode(scen.id, dest, o.seed), date: o.date || null, perks: perks, ev: BW.ENGINE_VERSION };
     G.cfg = cfg; G.scen = scen;
     G.tape = BW.genTape({ seed: cfg.seed, years: scen.years, dest: cfg.dest, mods: scen.mods });
     var rc = { life: scen.life, perks: perks };

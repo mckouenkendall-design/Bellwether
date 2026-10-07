@@ -5,7 +5,7 @@
   var ui = App.ui;
   var KIND_NAME = { stock: 'Stock', fund: 'Index fund', sfund: 'Sector fund', bond: 'Bond fund', cmdty: 'Commodity', crypto: 'Coin' };
   var CAT_COL = { cash: '--ink3', stocks: '--info', herd: '--brass', sector: '--warn', bonds: '--up', cmdty: '--down', crypto: '--ink2', cds: '--ink', realestate: '--brass2', business: '--cUp' };
-  var CAT_NAME = { cash: 'Cash', stocks: 'Stocks', herd: 'Herd 30 fund', sector: 'Sector funds', bonds: 'Bonds', cmdty: 'Commodities', crypto: 'Coin', cds: 'Term deposits', realestate: 'Property', business: 'Businesses' };
+  var CAT_NAME = { cash: 'Cash', stocks: 'Stocks', herd: 'Index fund', sector: 'Sector funds', bonds: 'Bonds', cmdty: 'Commodities', crypto: 'Coin', cds: 'Term deposits', realestate: 'Property', business: 'Businesses' };
   var prefs = App.prefs = { range: 240, mode: null, mcat: 'stock', msort: 'size', mfilter: 'all', nfilter: 'you', hrange: 0, ma: false, vol: false, cmp: false };
 
   function secName(id) { var s = G.tape.sectors.filter(function (x) { return x.id === id; })[0]; return s ? s.name : ''; }
@@ -130,7 +130,7 @@
           pe: function (a) { return st[a.id].pe == null ? 1e9 : st[a.id].pe; }, yield: function (a) { return -st[a.id].yield; }, growth: function (a) { return -(st[a.id].growth || -9); }, debt: function (a) { return st[a.id].debtToProfit == null ? (st[a.id].debt <= 0 ? -1 : 1e9) : st[a.id].debtToProfit; } }[k];
         items.sort(function (a, b) { var x = key(a), y = key(b); return x < y ? -1 : x > y ? 1 : 0; });
       }
-      if (prefs.mcat === 'fund' && !App.tool('sectorfunds')) host.appendChild(h('p', { cls: 'note', style: 'margin-bottom:10px', text: 'Ten sector funds unlock with Sector Funds, in the hub.' }));
+      if (prefs.mcat === 'fund' && !App.tool('sectorfunds')) host.appendChild(h('p', { cls: 'note', style: 'margin-bottom:10px', text: ({ 5: 'Five', 10: 'Ten' }[G.tape.sectors.length] || G.tape.sectors.length) + ' sector funds unlock with Sector Funds, in the hub.' }));
       if (prefs.mcat === 'cmdty' && !App.tool('coin')) host.appendChild(h('p', { cls: 'note', style: 'margin-bottom:10px', text: 'The Coin Exchange unlocks in the hub.' }));
       if (!items.length) { host.appendChild(h('div', { cls: 'empty', text: prefs.mfilter === 'watch' ? 'Nothing on your watchlist. Open a company and tap the star.' : 'Nothing here.' })); return; }
       var list = h('div', { cls: 'list' });
@@ -199,7 +199,7 @@
         if (App.tool('studio')) {
           var tg = function (label, key, apply) { var bt = h('button', { cls: 'chip sm' + (prefs[key] ? ' on' : ''), text: label, tap: function () { prefs[key] = !prefs[key]; bt.className = 'chip sm' + (prefs[key] ? ' on' : ''); apply(prefs[key]); chart.draw(); } }); return bt; };
           var row = h('div', { cls: 'chips', style: 'margin-top:6px' }, tg('Averages', 'ma', function (v) { chart.o.ma = v; }), tg('Volume', 'vol', function (v) { chart.o.vol = v; }));
-          if (id !== 'herd') row.appendChild(tg('vs Herd 30', 'cmp', function (v) { chart.o.compare = v ? tape.assets.herd : null; }));
+          if (id !== 'herd') row.appendChild(tg('vs ' + tape.dest.indexName, 'cmp', function (v) { chart.o.compare = v ? tape.assets.herd : null; }));
           b.appendChild(row);
         }
         b.appendChild(h('p', { cls: 'mute', style: 'font-size:12px;margin-top:6px', text: 'Drag across the chart to read any point. Dots along the bottom mark news.' }));
@@ -289,9 +289,10 @@
   function exposureNote(a) {
     var t = a.tpl, bits = [], ex = t.ex || {};
     if (t.cyc >= 1.4) bits.push('Hit hard by recessions.'); else if (t.cyc <= 0.25) bits.push('Barely notices recessions.');
-    if (ex.oil > 0) bits.push('Earns more when oil is expensive.'); if (ex.oil < 0) bits.push('Costs rise when oil is expensive.');
-    if (ex.gold) bits.push('Profit follows the gold price.'); if (ex.copper > 0) bits.push('Profit follows the copper price.'); if (ex.copper < 0) bits.push('Pays more when copper is expensive.');
-    if (ex.wheat) bits.push('Pays more when wheat is expensive.'); if (ex.rate > 0) bits.push('Earns more when interest rates are high.'); if (ex.rate < 0) bits.push('Squeezed when interest rates are high.');
+    var A = G.tape.assets, nm = function (k) { return A[k].name.toLowerCase(); };
+    if (ex.oil > 0) bits.push('Earns more when ' + nm('oil') + ' is expensive.'); if (ex.oil < 0) bits.push('Costs rise when ' + nm('oil') + ' is expensive.');
+    if (ex.gold) bits.push('Profit follows the price of ' + nm('gold') + '.'); if (ex.copper > 0) bits.push('Profit follows the price of ' + nm('copper') + '.'); if (ex.copper < 0) bits.push('Pays more when ' + nm('copper') + ' is expensive.');
+    if (ex.wheat > 0) bits.push('Earns more when ' + nm('wheat') + ' is expensive.'); if (ex.wheat < 0) bits.push('Pays more when ' + nm('wheat') + ' is expensive.'); if (ex.rate > 0) bits.push('Earns more when interest rates are high.'); if (ex.rate < 0) bits.push('Squeezed when interest rates are high.');
     if (t.dx >= 4) bits.push('Carries heavy debt.'); if (t.omMature != null) bits.push('Priced on profits it has not made yet.');
     if (t.trials) bits.push('Lives or dies on trial results.'); if (t.hits) bits.push('Depends on hits.');
     if (!bits.length) return null;
@@ -444,7 +445,7 @@
       var ref = a || tape.assets.herd, d = Math.min(s.d, ref.end >= 0 ? ref.end : s.d);
       if (n.d > ref.start && n.d <= d && ref.pc[n.d - 1] > 0) {
         var day = ref.pc[n.d] / ref.pc[n.d - 1] - 1, since = ref.pc[d] / ref.pc[n.d] - 1;
-        mv.appendChild(h('span', { cls: 'tag ' + f.sign(day), text: (a ? a.tkr : 'Herd 30') + ' that day ' + f.pp(day) }));
+        mv.appendChild(h('span', { cls: 'tag ' + f.sign(day), text: (a ? a.tkr : tape.dest.indexName) + ' that day ' + f.pp(day) }));
         if (d - n.d >= 5) mv.appendChild(h('span', { cls: 'tag ' + f.sign(since), text: 'Since then ' + f.pp(since) }));
       }
       if (a && !compact) mv.appendChild(h('span', { cls: 'tag brass', role: 'button', text: 'Open ' + a.tkr, tap: function (e) { e.stopPropagation(); S.asset(a.id); } }));
@@ -501,10 +502,10 @@
       b.appendChild(h('p', { cls: 'lead', text: 'For every company story so far that moved the share price by 1% or more, this checks where the price stood three months later, compared with the market.' }));
       var list = h('div', { cls: 'card', style: 'margin-top:12px' });
       ['FILING', 'WIRE', 'RUMOR', 'OPINION'].forEach(function (k) { var g = agg[k]; if (!g || g.n < 5) return;
-        list.appendChild(h('div', { cls: 'kv' }, h('span', null, h('span', { cls: 'src ' + k, text: App.SRC_NAME[k] }), '  ' + g.n + ' stories'), h('span', { text: Math.round(100 * g.stuck / g.n) + '% still pointed the same way' }))); });
+        list.appendChild(h('div', { cls: 'kv' }, h('span', null, h('span', { cls: 'src ' + k, text: App.SRC_NAME[k] }), '  ' + g.n + ' stories'), h('span', { text: Math.round(100 * g.stuck / g.n) + '% lasted' }))); });
       if (!list.children.length) list.appendChild(h('div', { cls: 'empty', text: 'Not enough stories yet. Check back in a year or two.' }));
       b.appendChild(list);
-      b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:10px', text: '50% is a coin flip: the story told you nothing lasting. The further above 50%, the more that kind of story is worth acting on.' }));
+      b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:10px', text: '"Lasted" means the price was still on the same side of the market three months later. 50% is a coin flip: the story told you nothing lasting. The further above 50%, the more that kind of story is worth acting on. With only a few stories the number is mostly luck.' }));
     } });
   };
 
@@ -513,7 +514,7 @@
     var r = G.run, d = G.dolly;
     U.sheet({ title: 'You against Dolly', build: function (b) {
       var w = App.worth();
-      b.appendChild(h('p', { cls: 'lead', text: 'Dolly gets the same paychecks, bills and surprises as you. She keeps $1,000 spare and puts every other dollar into the Herd 30 fund on payday. She never sells unless an emergency forces her to.' }));
+      b.appendChild(h('p', { cls: 'lead', text: 'Dolly gets the same paychecks, bills and surprises as you. She keeps $1,000 spare and puts every other dollar into the ' + G.tape.dest.indexName + ' fund on payday. She never sells unless an emergency forces her to.' }));
       var a = h('div', { cls: 'side' }), c = h('div', { cls: 'side' });
       U.add(a, [h('div', { cls: 'who', text: 'You' }), h('div', { cls: 'amt2', live: function () { return f.ms(App.worth().liq); } })]);
       U.add(c, [h('div', { cls: 'who', text: 'Dolly' }), h('div', { cls: 'amt2', live: function () { return f.ms(App.worth().dliq); } })]);
