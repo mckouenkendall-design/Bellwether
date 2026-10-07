@@ -35,15 +35,17 @@ The bot tests need nothing installed:
 
 ```
 node test/bots.js 20 30
+node test/exploits.js
 node test/meta.js
 node test/worlds.js
 ```
 
 - `bots.js 20 30` plays 16 different strategies through 30 twenty-year markets. It checks that cash always equals the sum of its ledger, that no fraction of a cent ever appears, and that the same seed always gives the same market. It also prints how each strategy did against Dolly.
+- `exploits.js` checks there is no free money: a business or a property cannot be flipped the same day for a profit, no price moves by a known amount on a known day (dividend pay days, report days, fund payout days), thousands of tiny trades cannot create money, and bad input to the engine is refused without changing anything. Every one of these was a real hole once.
 - `meta.js` checks scenarios, challenge codes, result codes, lockboxes and the end-of-run review.
 - `worlds.js` prints the long-run behaviour of the Earth, Moon and Mars markets.
 
-The phone test drives the real page with touch input in headless Chromium. It needs Playwright once:
+The phone test drives the real page with touch input in headless Chromium: a whole run by taps, save and reload, two phones on one challenge code, the casino, damaged save files, double taps and the Back button. It needs Playwright once:
 
 ```
 npm install playwright

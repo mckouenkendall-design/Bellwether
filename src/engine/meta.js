@@ -195,8 +195,8 @@
     return 'BW' + BW.ENGINE_VERSION + sc.code + BW.DEST[destId || 'earth'].code + '-' + enc32((seed >>> 0) % 1073741824, 6);
   };
   BW.parseCode = function (code) {
-    code = String(code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
-    var m = /^BW(\d)([A-Z])([A-Z])-?([A-Z2-9]{6})$/.exec(code);
+    code = String(code || '').toUpperCase().replace(/[\u2010-\u2015\u2212]/g, '-'); // phones like to turn a hyphen into a long dash
+    var m = /(?:^|[^A-Z0-9])BW(\d)([A-Z])([A-Z])[-\s]?([A-Z2-9]{6})(?![A-Z0-9])/.exec(code); // works on a bare code, a share link, or a whole pasted message
     if (!m) return { ok: false, why: 'That does not look like a challenge code. They look like BW1CE-K7QM2X.' };
     if (+m[1] !== BW.ENGINE_VERSION) return { ok: false, why: 'That code is from a different version of the game. Everyone needs to be on the same version.' };
     var scen = BW.SCENARIOS.filter(function (s) { return s.code === m[2]; })[0];
@@ -216,16 +216,44 @@
     return d.toISOString().slice(0, 10);
   };
   // result codes: enough to compare with friends, with a checksum that catches typos (not cheats)
-  function b64e(s) { var out = '', i, A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    var bytes = []; for (i = 0; i < s.length; i++) { var c = s.charCodeAt(i); bytes.push(c < 128 ? c : 63); }
+  var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  function utf8(str) { // text to bytes, so names with accents or emoji survive the trip
+    var out = [], i, c;
+    for (i = 0; i < str.length; i++) {
+      c = str.charCodeAt(i);
+      if (c >= 0xD800 && c < 0xDC00 && i + 1 < str.length) { var d2 = str.charCodeAt(i + 1); if (d2 >= 0xDC00 && d2 < 0xE000) { c = 0x10000 + ((c - 0xD800) << 10) + (d2 - 0xDC00); i++; } }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+      else if (c < 0x10000) out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      else out.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
+  }
+  function unutf8(b) {
+    var out = '', i = 0, c;
+    while (i < b.length) {
+      c = b[i++];
+      if (c >= 0xF0) c = ((c & 7) << 18) | ((b[i++] & 63) << 12) | ((b[i++] & 63) << 6) | (b[i++] & 63);
+      else if (c >= 0xE0) c = ((c & 15) << 12) | ((b[i++] & 63) << 6) | (b[i++] & 63);
+      else if (c >= 0xC0) c = ((c & 31) << 6) | (b[i++] & 63);
+      if (!(c >= 0)) return null;
+      if (c >= 0x10000) { c -= 0x10000; out += String.fromCharCode(0xD800 + (c >> 10), 0xDC00 + (c & 1023)); } else out += String.fromCharCode(c);
+    }
+    return out;
+  }
+  function b64e(str) { var out = '', i, bytes = utf8(str);
     for (i = 0; i < bytes.length; i += 3) { var b0 = bytes[i], b1 = bytes[i + 1], b2 = bytes[i + 2];
-      out += A[b0 >> 2] + A[((b0 & 3) << 4) | ((b1 || 0) >> 4)] + (b1 === undefined ? '' : A[((b1 & 15) << 2) | ((b2 || 0) >> 6)]) + (b2 === undefined ? '' : A[b2 & 63]); }
+      out += B64[b0 >> 2] + B64[((b0 & 3) << 4) | ((b1 || 0) >> 4)] + (b1 === undefined ? '' : B64[((b1 & 15) << 2) | ((b2 || 0) >> 6)]) + (b2 === undefined ? '' : B64[b2 & 63]); }
     return out; }
-  function b64d(s) { var A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', out = '', i, n = 0, bits = 0;
-    for (i = 0; i < s.length; i++) { var k = A.indexOf(s[i]); if (k < 0) return null; n = (n << 6) | k; bits += 6; if (bits >= 8) { bits -= 8; out += String.fromCharCode((n >> bits) & 255); } }
-    return out; }
+  function b64d(str) { var bytes = [], i, n = 0, bits = 0;
+    for (i = 0; i < str.length; i++) { var k = B64.indexOf(str[i]); if (k < 0) return null; n = ((n << 6) | k) & 0xFFFF; bits += 6; if (bits >= 8) { bits -= 8; bytes.push((n >> bits) & 255); } }
+    return unutf8(bytes); }
+  BW.cleanName = function (name) { // what a name is allowed to be: up to 12 visible characters, no separators, no stray spaces
+    var chars = Array.from ? Array.from(String(name == null ? '' : name)) : String(name == null ? '' : name).split('');
+    return chars.filter(function (ch) { return ch !== '|' && ch >= ' '; }).slice(0, 12).join('').replace(/\s+/g, ' ').trim();
+  };
   BW.makeResult = function (r) { // r: { code, name, score, dolly, attempt, bankrupt }
-    var body = [r.code, String(r.name || 'Anon').replace(/[|]/g, '').slice(0, 12), Math.round(r.score / 100), Math.round(r.dolly / 100), r.attempt || 1, r.bankrupt ? 1 : 0].join('|');
+    var body = [r.code, BW.cleanName(r.name) || 'Anon', Math.round(r.score / 100), Math.round(r.dolly / 100), r.attempt || 1, r.bankrupt ? 1 : 0].join('|');
     return 'R.' + b64e(body + '|' + (BW.mix('result', body) % 46656).toString(36));
   };
   BW.parseResult = function (str) {
@@ -237,16 +265,24 @@
     if (p.length !== 7) return { ok: false, why: 'That result code is damaged.' };
     var chk = p.pop();
     if ((BW.mix('result', p.join('|')) % 46656).toString(36) !== chk) return { ok: false, why: 'That result code has a typo in it.' };
-    return { ok: true, code: p[0], name: p[1], score: +p[2] * 100, dolly: +p[3] * 100, attempt: +p[4], bankrupt: p[5] === '1' };
+    // A correct checksum only proves there is no typo. The contents still have to be sane before they go on a scoreboard.
+    var pc = BW.parseCode(p[0]), sc = +p[2], dl = +p[3], at = +p[4];
+    var whole = function (x, lo, hi) { return typeof x === 'number' && isFinite(x) && Math.round(x) === x && x >= lo && x <= hi; };
+    if (!pc.ok || pc.code !== p[0] || !/^-?\d+$/.test(p[2]) || !/^-?\d+$/.test(p[3]) || !whole(sc, -1e12, 1e13) || !whole(dl, -1e12, 1e13) || !whole(at, 1, 9999)) return { ok: false, why: 'That result code is not valid.' };
+    return { ok: true, code: p[0], name: BW.cleanName(p[1]) || 'Anon', score: sc * 100, dolly: dl * 100, attempt: at, bankrupt: p[5] === '1' };
   };
 
   /* ---------- the review ---------- */
   var CAT_LABEL = BW.CAT_LABEL = { stocks: 'Stocks you picked', herd: 'The index fund', sector: 'Sector funds', bonds: 'Bonds', cmdty: 'Commodities', crypto: 'The coin', cds: 'Term deposits', realestate: 'Real estate', business: 'Businesses', casino: 'Casino' };
   BW.analyze = function (run, dolly, scen) {
-    var s = run.s, tape = run.tape, M = tape.M, d = s.d, trNow = M.tr[d];
+    var s = run.s, tape = run.tape, M = tape.M, d = s.d, trNow = M.bench[d];
     var score = run.liq(), dScore = dolly.liq();
     var years = (d - s.day0) / 240;
-    var res = { score: score, dolly: dScore, nw: run.nw(), dollyNW: dolly.nw(), ratio: dScore > 100 ? Math.max(0, score) / dScore : (score > dScore ? 1.5 : score === dScore ? 1 : 0.5), years: years, bankrupt: s.bankrupt, early: !!s.early };
+    // How far ahead or behind, as a multiple of Dolly. Early in a run both of you can be near or below zero (the student loan),
+    // where a ratio means nothing, so the gap is then measured against the money you both started with instead.
+    var floor = 500000; // $5,000: what a standard run starts with
+    var ratio = dScore >= floor ? Math.max(0, score) / dScore : Math.max(0, 1 + (score - dScore) / floor);
+    var res = { score: score, dolly: dScore, nw: run.nw(), dollyNW: dolly.nw(), ratio: ratio, years: years, bankrupt: s.bankrupt, early: !!s.early };
     // public-market-equivalent: for every dollar that went into a thing, what would that dollar have become in the index on the same days?
     var cats = {}, items = [];
     for (var key in s.pme) {
@@ -256,7 +292,7 @@
       else if (key === 'casino') { name = 'Casino'; }
       else if (key.indexOf('prop:') === 0) { var pr = run._prop(key.slice(5)); if (pr) { val = run.propValue(pr) - (pr.loan ? pr.loan.bal : 0); name = pr.addr; } else { var L = run.listing(key.slice(5)); name = L ? L.addr : 'Property'; } }
       else if (key.indexOf('biz:') === 0) { var bx = run._biz(key.slice(4)); if (bx) val = run.bizValue(bx); name = BW.BIZ_BY[key.slice(4)].name; }
-      var alpha = val - p.u * trNow; // dollars ahead of (or behind) the index, in today's money
+      var alpha = val - p.u * trNow; // dollars ahead of (or behind) the same money left in the index fund, in today's money
       var profit = val + p.got - p.paid;
       var c = cats[p.cat] || (cats[p.cat] = { cat: p.cat, label: CAT_LABEL[p.cat], alpha: 0, profit: 0, paid: 0, val: 0 });
       c.alpha += alpha; c.profit += profit; c.paid += p.paid; c.val += val;
@@ -267,9 +303,12 @@
     res.best = items.filter(function (x) { return x.alpha > 0; }).slice(0, 3);
     res.worst = items.filter(function (x) { return x.alpha < 0; }).slice(-3).reverse();
     var explained = 0; res.cats.forEach(function (c) { explained += c.alpha; });
-    res.gap = res.nw - res.dollyNW;
+    // The score is walk-away value, so that is the gap that gets explained. It splits three ways: what each kind of
+    // holding did against the index, what selling up would cost each of you, and everything else (mostly idle cash).
+    res.gap = score - dScore;
     res.explained = explained;
-    res.idle = res.gap - explained; // cash on the sidelines, debt paid early, tax timing, everything else
+    res.exit = (score - res.nw) - (dScore - res.dollyNW); // tax and selling costs still to pay, yours less Dolly's
+    res.idle = res.gap - explained - res.exit; // cash on the sidelines, debt paid early, timing, everything else
     res.costs = { fees: s.tot.fees, tax: s.tot.tax, cardInt: s.tot.cardInt, dollyTax: dolly.s.tot.tax, dollyFees: dolly.s.tot.fees };
     var cw = s.hist.cashW, sum = 0; for (var i = 0; i < cw.length; i++) sum += cw[i];
     res.avgCash = cw.length ? sum / cw.length : 0;
@@ -287,10 +326,11 @@
     if (res.ratio >= 1.02) L2.push({ k: 'good', h: 'You beat the index', b: 'You finished ' + pct(res.ratio - 1) + ' ahead of Dolly. Most professionals fail to do that over ' + Math.round(years) + ' years. Whether it was skill or luck takes more than one run to tell, so try the same approach on a new market.' });
     else if (res.ratio >= 0.98) L2.push({ k: 'ok', h: 'You matched the index', b: 'A tie with Dolly is a good result. She did nothing but buy the whole market every month, and that beats most people who try harder.' });
     else L2.push({ k: 'bad', h: 'The index won', b: 'Dolly finished ' + pct(1 / Math.max(res.ratio, 0.01) - 1) + ' ahead of you by buying the ' + tape.dest.indexName + ' fund every month and never selling. This is the normal result, for amateurs and professionals alike.' });
-    if (res.avgCash > 0.25 && res.idle < 0) L2.push({ k: 'bad', h: 'Too much sat in cash', b: 'On average ' + pct(res.avgCash) + ' of your money was in cash. The market returned about ' + (res.idxCagr * 100).toFixed(1) + '% a year over this run. Cash earned far less, and waiting for the perfect moment cost you roughly ' + f(-res.idle, { auto: true }) + '.' });
+    if (res.avgCash > 0.25 && res.idle < 0) L2.push({ k: 'bad', h: 'Too much sat in cash', b: 'On average ' + pct(res.avgCash) + ' of your money was in cash. The market returned about ' + (res.idxCagr * 100).toFixed(1) + '% a year over this run. Cash earned far less, and waiting for the perfect moment cost you roughly ' + f(res.gap < 0 ? Math.min(-res.idle, -res.gap) : -res.idle, { auto: true }) + '.' });
     if (stock && stock.alpha < -0.03 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: 'Your stock picks trailed the market', b: 'The money you put into individual companies would be worth ' + f(-stock.alpha, { auto: true }) + ' more in the index fund. Most single stocks lose to the index, because a few big winners drive most of its gains and they are hard to pick in advance.' });
     if (stock && stock.alpha > 0.03 * Math.max(res.nw, 1)) L2.push({ k: 'good', h: 'Your stock picks beat the market', b: 'Your individual companies are worth ' + f(stock.alpha, { auto: true }) + ' more than the same money in the index fund.' });
-    if (s.tot.tax > 2.5 * dolly.s.tot.tax && s.tot.tax > 0.02 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: 'Trading ran up a tax bill', b: 'You paid ' + f(s.tot.tax, { auto: true }) + ' in tax. Dolly paid ' + f(dolly.s.tot.tax, { auto: true }) + '. Every time you sell at a profit, part of it leaves for good and stops compounding. Selling within a year is taxed at 22% instead of 15%.' });
+    var gainTax = s.tot.taxGain || 0;
+    if (gainTax > 0.02 * Math.max(res.nw, 1) && gainTax > 2.5 * (dolly.s.tot.taxGain || 0)) L2.push({ k: 'bad', h: 'Selling ran up a tax bill', b: 'You paid ' + f(gainTax, { auto: true }) + ' in tax on profits you took along the way. Dolly never sold, so that money stayed invested for her. Every time you sell at a profit, part of it leaves for good and stops compounding. Selling within a year is taxed at 22% instead of 15%.' });
     if (s.st.panicSells > 0 && res.sells.regret > 0) L2.push({ k: 'bad', h: 'You sold when it was scary', b: 'You sold stocks ' + s.st.panicSells + ' time' + (s.st.panicSells > 1 ? 's' : '') + ' while the market was down more than 15%. ' + res.sells.regret + ' of your sales were later up more than 25% from where you let go. Selling low locks the loss in.' });
     if (s.st.chase >= 3) L2.push({ k: 'bad', h: 'You chased what was already hot', b: s.st.chase + ' times you bought a stock right after it had jumped more than 18% in a month. By then the good news is usually in the price.' });
     if (s.st.maxW > 0.4) L2.push({ k: 'ok', h: 'A lot rode on one company', b: 'At one point a single stock was ' + pct(s.st.maxW) + ' of everything you had. That can make you rich or wipe you out. The index spreads the same bet across ' + tape.dest.companies.length + ' companies.' });
@@ -299,7 +339,7 @@
     if (cats.business && Math.abs(cats.business.alpha) > 0.03 * Math.max(res.nw, 1)) L2.push({ k: cats.business.alpha > 0 ? 'good' : 'bad', h: cats.business.alpha > 0 ? 'Your businesses earned their keep' : 'Your businesses lagged', b: 'They ended ' + f(Math.abs(cats.business.alpha), { auto: true }) + (cats.business.alpha > 0 ? ' ahead of' : ' behind') + ' the index. A small business can out-earn the market, but all of it rides on one location and one economy.' });
     if (cats.casino && s.tot.casinoBet > 0) L2.push({ k: 'bad', h: 'The casino took its cut', b: 'You bet ' + f(s.tot.casinoBet, { auto: true }) + ' in total. The odds said you would lose about ' + f(Math.round(s.tot.casinoEV), { auto: true }) + '. You actually ' + (s.tot.casinoWon >= s.tot.casinoBet ? 'won ' : 'lost ') + f(Math.abs(s.tot.casinoWon - s.tot.casinoBet), { auto: true }) + '. Play long enough and the two numbers meet.' });
     if (cats.crypto && cats.crypto.alpha < -0.02 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: tape.dest.crypto.name + ' fleeced you', b: 'It ended ' + f(-cats.crypto.alpha, { auto: true }) + ' behind the index. With nothing underneath the price, you were betting on other buyers showing up.' });
-    if (res.trades <= 5 && res.ratio > 0.95 && years >= 5) L2.push({ k: 'good', h: 'You barely touched it', b: 'Only ' + res.trades + ' trades all run. Doing little is underrated: no fees, almost no tax, and nothing to panic about.' });
+    if (res.trades <= 5 && res.ratio > 0.95 && years >= 5) L2.push({ k: 'good', h: 'You barely touched it', b: (res.trades === 0 ? 'No trades' : res.trades === 1 ? 'Only 1 trade' : 'Only ' + res.trades + ' trades') + ' all run. Doing little is underrated: no fees, almost no tax, and nothing to panic about.' });
     res.lessons = L2.slice(0, 5);
     return res;
   };

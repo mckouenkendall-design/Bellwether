@@ -7,10 +7,10 @@
   function condWord(c) { return c >= 0.93 ? 'Excellent condition' : c >= 0.8 ? 'Good condition' : c >= 0.65 ? 'Tired, needs work' : 'A wreck. Needs everything'; }
   function amountSheet(o) { // { title, lead, max, label, chips: [[frac,label]], onGo(amt) -> result, go }
     U.sheet({ title: o.title, build: function (b, ctl) {
-      var amt = 0, input = h('input', { id: 'amt-in', inputmode: 'decimal', placeholder: '0', 'aria-label': o.label || 'Amount' });
+      var amt = 0, input = h('input', { id: 'amt-in', inputmode: 'decimal', maxlength: '14', placeholder: '0', 'aria-label': o.label || 'Amount' });
       var btn = h('button', { cls: 'btn pri', text: o.go || 'Confirm' }), note = h('div', { cls: 'mute', style: 'font-size:13px;min-height:18px' });
       function paint() { btn.disabled = !(amt > 0); if (o.note) note.textContent = o.note(amt) || ''; }
-      input.addEventListener('input', function () { amt = Math.round(parseFloat(input.value.replace(/[^0-9.]/g, '')) * 100) || 0; paint(); });
+      input.addEventListener('input', function () { amt = U.parseMoney(input.value); paint(); });
       var chips = h('div', { cls: 'chips' });
       (o.chips || [[0.25, '25%'], [0.5, '50%'], [1, 'Max']]).forEach(function (c) { chips.appendChild(h('button', { cls: 'chip', text: c[1], tap: function () { amt = Math.floor(o.max() * c[0]); input.value = (amt / 100).toFixed(2); paint(); } })); });
       U.tap(btn, function () { var r = o.onGo(amt); if (r && r.ok === false) { U.toast(r.why || 'That did not go through.', { kind: 'bad' }); BW.Audio.play('error'); return; } App.touch(); ctl.close(true); });
@@ -47,7 +47,7 @@
     bud.appendChild(U.kvLive('Businesses, last month', function () { return s.biz.length ? f.mp(B().biz) : 'None owned'; }));
     bud.appendChild(U.kvLive('Left to invest', function () { return f.mp(B().free); }, 'total'));
     el.appendChild(bud);
-    el.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Living costs rise with prices every year, and a little faster. Raises come once a year.' }));
+    el.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Living costs rise with prices every year, and a little faster.' + (s.job.salary > 0 ? ' Raises come once a year.' : ' There is no paycheck in this run: the money you started with has to do the work.') }));
 
     if (s.loan) {
       el.appendChild(h('h3', { text: 'Student loan' }));
@@ -237,15 +237,16 @@
         if (p.loan && !p.sale) acts.appendChild(h('button', { cls: 'btn', text: 'Pay down the mortgage', tap: function () { amountSheet({ title: 'Pay down the mortgage', lead: 'Saves you ' + p.loan.rate.toFixed(2) + '% a year on every dollar, guaranteed.', max: function () { return Math.min(Math.max(0, s.cash), p.loan ? p.loan.bal : 0); }, go: 'Pay',
           onGo: function (a) { var o = r.propPaydown(p.id, a); if (o.ok) { U.toast('Paid ' + f.ms(o.paid) + ' off the mortgage', { kind: 'good' }); BW.Audio.play('sell'); reg.render(); } return o; } }); } }));
         if (p.sale) acts.appendChild(h('button', { cls: 'btn ghost', text: 'Take it off the market', tap: function () { r.propCancelSale(p.id); App.touch(); reg.render(); } }));
+        else if (p.reno > 0) acts.appendChild(h('p', { cls: 'note', text: 'The builders are in for ' + p.reno + ' more month' + (p.reno > 1 ? 's' : '') + '. You can sell once the work is finished.' }));
         else {
           acts.appendChild(h('button', { cls: 'btn', text: 'Put it up for sale', tap: function () { var q3 = r.saleQuote(p, false);
             U.confirm({ title: 'Sell through an agent?', body: h('div', { cls: 'stack' }, h('p', { cls: 'lead', text: 'It takes one to four months to find a buyer, longer if the market is falling. Rent keeps coming in meanwhile.' }),
               h('div', { cls: 'card' }, U.kv('Likely price', f.ms(q3.px)), U.kv(U.term('Closing costs', 'closing'), f.ms(q3.closing)), U.kv('Mortgage to repay', f.ms(q3.bal)), U.kv('Tax on the gain', f.ms(q3.tax)), U.kv('You walk away with about', f.ms(q3.net), 'total'))),
-              yes: 'List it', onYes: function () { var o = r.propSell(p.id, false); if (o.ok) { U.toast('Listed for sale', { sub: 'Expect a buyer in about ' + Math.round(o.days / 20) + ' months.' }); App.touch(); reg.render(); } } }); } }));
+              yes: 'List it', onYes: function () { var o = r.propSell(p.id, false); if (o.ok) { U.toast('Listed for sale', { sub: 'Expect a buyer in about ' + Math.round(o.days / 20) + ' months.' }); App.touch(); reg.render(); } else { U.toast(o.why || 'That did not go through.', { kind: 'bad', ms: 4500 }); BW.Audio.play('error'); } } }); } }));
           acts.appendChild(h('button', { cls: 'btn ghost', text: 'Sell today to a cash buyer', tap: function () { var q4 = r.saleQuote(p, true);
             U.confirm({ title: 'Take the fast offer?', body: h('div', { cls: 'stack' }, h('p', { cls: 'lead', text: 'An investor will pay cash today, at 12% under what it is worth. That discount is the price of speed.' }),
               h('div', { cls: 'card' }, U.kv('Price', f.ms(q4.px)), U.kv('Costs', f.ms(q4.closing)), U.kv('Mortgage to repay', f.ms(q4.bal)), U.kv('Tax on the gain', f.ms(q4.tax)), U.kv('You walk away with', f.ms(q4.net), 'total'))),
-              yes: 'Sell now', danger: true, onYes: function () { var o = r.propSell(p.id, true); if (o.ok) { U.toast('Sold ' + p.addr, { kind: o.gain >= 0 ? 'good' : 'bad', sub: 'You walked away with ' + f.ms(o.net) }); BW.Audio.play('sell'); App.touch(); ctl.close(true); redraw(); } } }); } }));
+              yes: 'Sell now', danger: true, onYes: function () { var o = r.propSell(p.id, true); if (o.ok) { U.toast('Sold ' + p.addr, { kind: o.gain >= 0 ? 'good' : 'bad', sub: 'You walked away with ' + f.ms(o.net) }); BW.Audio.play('sell'); App.touch(); ctl.close(true); redraw(); } else { U.toast(o.why || 'That did not go through.', { kind: 'bad', ms: 4500 }); BW.Audio.play('error'); } } }); } }));
         }
         host.appendChild(acts);
       });
@@ -273,7 +274,7 @@
       list.appendChild(row);
     });
     el.appendChild(list);
-    U.once('x_biz', 'Owning a business', 'A business pays you its profit every month. Profit swings with the economy and with luck, and some months lose money. It is worth roughly half what you put in plus three years of profit, so you cannot get your money straight back out. The upside is that a good one can out-earn the stock market.');
+    U.once('x_biz', 'Owning a business', 'A business pays you its profit every month. Profit swings with the economy and with luck, and some months lose money. A buyer will always pay less than it cost to set up (about 15% less for a healthy one, far less for one that is struggling), so you cannot get your money straight back out. The upside is that a good one can out-earn the stock market.');
   }
   function bizBuySheet(b, redraw) {
     var r = G.run, s = r.s;
@@ -284,6 +285,7 @@
       card.appendChild(U.kv('Price', f.ms(cost)));
       card.appendChild(U.kv('Profit in a normal year, run by you', f.ms(base)));
       card.appendChild(U.kv('With a manager', f.ms(Math.round(base * 0.7))));
+      card.appendChild(U.kv('What it would sell for tomorrow', f.ms(Math.round(cost * 0.85))));
       card.appendChild(U.kv('Feels a recession', b.cyc >= 1.4 ? 'Badly' : b.cyc >= 0.8 ? 'Yes' : 'A little'));
       card.appendChild(U.kv('Month to month', b.vol >= 0.3 ? 'Very lumpy' : b.vol >= 0.2 ? 'Lumpy' : 'Fairly steady'));
       el.appendChild(card);
@@ -375,7 +377,7 @@
     var c = h('div', { cls: 'card' });
     c.appendChild(U.kv('Scenario', G.scen.name));
     c.appendChild(U.kvLive('Time left', function () { var left = s.endD - s.d; return left > 240 ? (left / 240).toFixed(1) + ' years' : Math.round(left / 20) + ' months'; }));
-    c.appendChild(h('button', { cls: 'kv', style: 'width:100%', tap: function () { S.shareCode(G.cfg.code); } }, h('span', { text: 'Challenge code for this market' }), h('span', { cls: 'brass num', text: G.cfg.code })));
+    c.appendChild(h('button', { cls: 'kv', style: 'width:100%', tap: function () { S.shareCode(G.cfg.code); } }, h('span', { text: 'Challenge code for this market' }), h('span', { cls: 'brass num nowrap', text: G.cfg.code })));
     el.appendChild(c);
     var l2 = h('div', { cls: 'list', style: 'margin-top:10px' });
     l2.appendChild(row('gear', 'Settings', 'Sound, pausing, look', function () { S.settings(); }));

@@ -167,6 +167,7 @@
       co.post = 30;
 
       // cash
+      var vBooks0 = value(co, d); // worth of a share just before the quarter's cash reaches the balance sheet
       var reinvest = Math.max(0, co.g) * co.ci * revQ;
       var fcf = ni - reinvest;
       var prev = co.q.length ? co.q[co.q.length - 1] : null;
@@ -188,6 +189,7 @@
           co.dps = cutTo; co.strain = 0; co.rx -= rQ.range(0.03, 0.09);
         }
       }
+      if (co.deal) co.dps = 0; // a company that has agreed to be bought stops declaring dividends
       var divTotal = co.dps * co.sh;
       var after = fcf - divTotal;
       var bought = 0;
@@ -210,7 +212,12 @@
       var rec = { d: d, rev: revQ, om: omQ, ni: ni, eps: eps, est: est, sur: sur, dps: co.dps, debt: co.debt, sh: co.sh, g: revYoY, int: interest, ebit: ebit, one: co.oneOff };
       co.q.push(rec);
       co.omSum = 0; co.revSum = 0; co.qDays = 0; co.oneOff = 0;
-      if (co.dps > 0) co.divs.push({ d: Math.min(d + 10, ctx.N - 1), amt: Math.round(co.dps * 10000) / 10000 });
+      // The dividend is declared today and paid in ten trading days. See divAcc below for how it sits in the price.
+      var payD = Math.min(d + 10, ctx.N - 1), dAmt = co.dps > 0 ? Math.round(co.dps * 10000) / 10000 : 0, accNow = divAcc(co, d);
+      if (dAmt > 0) { co.divs.push({ d: payD, amt: dAmt }); co.divPend = payD; }
+      co.dT0 = d; co.dA0 = accNow; co.dT1 = payD; co.dA1 = dAmt;
+      co.repFrom = d; co.repTo = d + 60;
+      co.bookStep = value(co, d) - vBooks0; co.bookDay = d; // exactly how much the books moved a share today
 
       // headline
       var epsS = (eps < 0 ? '-$' : '$') + Math.abs(eps).toFixed(2);
@@ -505,6 +512,35 @@
       e.fn(co, d);
     }
 
+    /* ---------- no steps you can see coming ----------
+     * Two things would otherwise move a share price by a known amount on a known day, and anything like that can be
+     * traded for free money (buy the day before, sell the day after):
+     *   1. A dividend. The price has to fall by the dividend on the day it is paid, or collecting it costs nothing.
+     *      So the next payout builds up in the price a little each day and drops out on pay day. Hold for a tenth of
+     *      the quarter and you earn about a tenth of the dividend, whichever days you pick.
+     *   2. The books. Profit a company keeps (or cash it burns) reaches its balance sheet once a quarter, on report
+     *      day. The price leans into that gradually over the quarter, so report day only moves on the surprise.
+     * Both wash out to nothing over a full quarter: long-term returns are unchanged. */
+    function divAcc(co, d) { // dollars per share of the next dividend already in the price
+      if (co.dT1 == null) return 0;
+      if (co.deal && !co.dealSeen) { co.dealSeen = 1; if (!(co.divPend > d)) { co.dT0 = d; co.dA0 = 0; co.dT1 = ctx.N + 1; co.dA1 = 0; } }
+      if (d >= co.dT1) { co.dT0 = co.dT1; co.dA0 = 0; co.dT1 = co.dT0 + 60; co.dA1 = co.deal ? 0 : Math.max(0, co.dps); } // paid: start building towards the next one
+      var span = co.dT1 - co.dT0;
+      return span > 0 ? co.dA0 + (co.dA1 - co.dA0) * (d - co.dT0) / span : co.dA1;
+    }
+    function retAcc(co, d) { // dollars per share of this quarter's kept profit (or burnt cash) already in the price
+      if (co.deal || !(co.qDays > 0) || !(co.sh > 0)) return 0;
+      if (co.repTo == null || d > co.repTo) { // first quarter after listing: work out when the first report falls
+        var first = co.start + 21; co.repFrom = co.start; co.repTo = first + (((co.qOff - first % 60) % 60) + 60) % 60;
+      }
+      // the same sums the report will do, on the figures the public can see so far this quarter
+      var M = ctx.M, revQ = co.revSum / co.qDays / 4 * dexp(-co.hidR), omQ = co.omSum / co.qDays - co.hidM;
+      var interest = co.debt > 0 ? co.debt * co.dRate / 100 / 4 : co.debt * Math.max(0, M.rate[d] - 0.5) / 100 / 4;
+      var pre = revQ * omQ - interest - co.oneOff, ni = pre > 0 ? pre * (1 - TAX) : pre;
+      var after = ni - Math.max(0, co.g) * co.ci * revQ - Math.max(0, co.dps) * co.sh;
+      return after / co.sh * clamp((d - co.repFrom) / Math.max(1, co.repTo - co.repFrom), 0, 1);
+    }
+
     /* ---------- daily step ---------- */
     E.step = function (d) {
       var M = ctx.M, st = ctx.st, i, co;
@@ -562,7 +598,15 @@
           co.pc[d] = 0; co.fvA[d] = 0; co.shA[d] = co.sh; continue;
         }
         p = priceOf(co, d);
-        co.pc[d] = Math.max(1, Math.round(p * 100));
+        // kept profit is valued the way the rest of the business is (so it scales with the mood of the moment); a dividend is plain cash
+        var basePx = Math.max(1, Math.round(p * 100)), moodX = co.fv > 0 && !co.deal ? p / co.fv : 1;
+        if (co.bookDay === d && !co.deal) { // report day: whatever the running estimate got wrong is carried forward and fades over the next quarter, instead of landing today
+          co.resC = clamp((co.leanRet || 0) - co.bookStep * moodX, -0.1 * p, 0.1 * p); co.resT = d;
+        }
+        co.leanRet = co.deal ? 0 : retAcc(co, d) * moodX + (co.resT != null ? co.resC * Math.max(0, 1 - (d - co.resT) / 60) : 0);
+        // Under about a dollar a share one cent is a big step, so the lean is faded out there rather than let rounding turn it into a pattern.
+        var lean = Math.round((divAcc(co, d) + co.leanRet) * 100 * clamp((basePx - 50) / 150, 0, 1));
+        co.pc[d] = Math.max(1, basePx + Math.max(lean, -Math.floor(basePx / 2)));
         co.fvA[d] = co.fv; co.shA[d] = co.sh;
       }
     };

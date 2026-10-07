@@ -68,11 +68,17 @@
   var P = Run.prototype;
 
   /* ---------- basics ---------- */
-  P._cash = function (amt, cat) { this.s.cash += amt; this.s.flow[cat] = (this.s.flow[cat] || 0) + amt; };
+  P._cash = function (amt, cat) {
+    // The last line of defence: nothing that is not a whole number of cents ever reaches the balance.
+    if (typeof amt !== 'number' || !isFinite(amt) || Math.round(amt) !== amt) throw new Error('Bad cash amount (' + cat + '): ' + amt);
+    this.s.cash += amt; this.s.flow[cat] = (this.s.flow[cat] || 0) + amt;
+  };
+  function num(x) { return typeof x === 'number' && isFinite(x); }
+  var OVER = { ok: false, why: 'This run is over.' };
   P._act = function () { var a = Array.prototype.slice.call(arguments); a.unshift(this.s.d); this.s.acts.push(a); };
   P._pme = function (key, cat, out) { // out > 0: cash put into this thing. out < 0: cash it returned
     var p = this.s.pme[key] || (this.s.pme[key] = { u: 0, paid: 0, got: 0, cat: cat });
-    p.u += out / this.tape.M.tr[this.s.d];
+    p.u += out / this.tape.M.bench[this.s.d];
     if (out > 0) p.paid += out; else p.got -= out;
   };
   P.asset = function (id) { return this.tape.assets[id]; };
@@ -102,18 +108,24 @@
   /* ---------- buying and selling ---------- */
   P.canTrade = function (id) { var a = this.tape.assets[id]; return !!a && T.alive(a, this.s.d) && !this.s.done; };
 
-  P.buy = function (id, amt, opts) {
+  // What the player can ask for. The extra switches (no fee, a set price, forced sales) are for the engine's own use
+  // only: reinvested dividends, takeovers, standing orders and a maxed-out card.
+  P.buy = function (id, amt, opts) { return this._buy(id, amt, { dry: !!(opts && opts.dry) }); };
+  P.sell = function (id, qty, opts) { return this._sell(id, qty, { dry: !!(opts && opts.dry) }); };
+  P._buy = function (id, amt, opts) {
     var s = this.s, a = this.tape.assets[id];
     opts = opts || {};
     if (!this.canTrade(id)) return { ok: false, why: 'This is not trading.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
     amt = Math.floor(amt);
     if (!(amt > 0)) return { ok: false, why: 'Enter an amount.' };
+    if (!opts.auto && amt < 100) return { ok: false, why: 'The smallest order is $1.' };
     if (amt > s.cash) return { ok: false, why: 'You only have ' + BW.fmtMoney(Math.max(0, s.cash)) + ' in cash.' };
     var p = a.pc[s.d];
-    var fee = opts.noFee ? 0 : Math.round(amt * this.feeBps(a) / 10000);
+    var fee = opts.noFee ? 0 : Math.ceil(amt * this.feeBps(a) / 10000 - 1e-9);
     var q = Math.floor((amt - fee) / p * 1e6) / 1e6;
     if (!(q > 0)) return { ok: false, why: 'That is too little to buy any.' };
-    var cost = Math.round(q * p);
+    var cost = Math.ceil(q * p - 1e-9);
     if (opts.dry) return { ok: true, q: q, cost: cost, fee: fee, total: cost + fee, px: p };
     var pos = s.pos[id] || (s.pos[id] = { q: 0, lots: [], dp: 0 });
     pos.lots.push([q, cost + fee, s.d]);
@@ -135,17 +147,19 @@
   };
 
   // qty: number of shares, or 'all'. opts: { dry, px (override, cents), noFee, forced }
-  P.sell = function (id, qty, opts) {
+  P._sell = function (id, qty, opts) {
     var s = this.s, a = this.tape.assets[id], pos = s.pos[id];
     opts = opts || {};
     if (!pos || !(pos.q > 0)) return { ok: false, why: 'You do not own any.' };
     if (opts.px == null && !this.canTrade(id)) return { ok: false, why: 'This is not trading.' };
+    if (qty !== 'all' && !num(qty)) return { ok: false, why: 'Enter an amount.' };
     if (qty === 'all' || qty >= pos.q - 1e-9) qty = pos.q;
     qty = rq(qty);
     if (!(qty > 0)) return { ok: false, why: 'Enter an amount.' };
     var p = opts.px != null ? opts.px : a.pc[s.d];
-    var gross = Math.round(qty * p);
-    var fee = opts.noFee ? 0 : Math.round(gross * this.feeBps(a) / 10000);
+    var gross = Math.floor(qty * p + 1e-9);
+    if (gross < 100 && qty < pos.q && !opts.forced && opts.px == null) return { ok: false, why: 'The smallest sale is $1, unless you sell everything.' };
+    var fee = opts.noFee ? 0 : Math.ceil(gross * this.feeBps(a) / 10000 - 1e-9);
     var net = gross - fee;
     var lots = opts.dry ? pos.lots.map(function (l) { return l.slice(); }) : pos.lots;
     var rem = qty, st = 0, lt = 0, costOut = 0, netLeft = net, i = 0;
@@ -167,7 +181,7 @@
     if (pos.q <= 1e-9 || !pos.lots.length) delete s.pos[id];
     this._cash(net, 'invest');
     if (tax) this._cash(-tax, 'tax');
-    s.tot.fees += fee; s.tot.tax += tax; s.tot.realized += net - costOut;
+    s.tot.fees += fee; s.tot.tax += tax; s.tot.taxGain = (s.tot.taxGain || 0) + tax; s.tot.realized += net - costOut;
     this._pme(id, CAT_OF[a.kind], -(net - tax));
     var ps = s.ps[id] || (s.ps[id] = { paid: 0, got: 0, days: 0, first: s.d });
     ps.got += net;
@@ -190,7 +204,11 @@
     return Math.max(0.1, Math.round(r * 100) / 100);
   };
   P.cdOpen = function (term, amt) {
-    var s = this.s; amt = Math.floor(amt);
+    var s = this.s;
+    if (s.done) return OVER;
+    if (term !== 1 && term !== 3 && term !== 5) return { ok: false, why: 'Choose 1, 3 or 5 years.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
+    amt = Math.floor(amt);
     if (!(amt >= 10000)) return { ok: false, why: 'The minimum is $100.' };
     if (amt > s.cash) return { ok: false, why: 'Not enough cash.' };
     var rate = this.cdRate(term);
@@ -201,9 +219,11 @@
     return { ok: true, rate: rate, interest: interest };
   };
   P.cdValue = function (cd) { return cd.p + Math.round(cd.int * clamp((this.s.d - cd.d0) / (cd.d1 - cd.d0), 0, 1)); };
+  // interest you actually receive if you break a deposit today: what has built up, less half a year's worth
+  P.cdBreakInterest = function (cd) { return Math.max(0, Math.round(cd.int * clamp((this.s.d - cd.d0) / (cd.d1 - cd.d0), 0, 1)) - Math.round(cd.p * cd.rate / 100 / 2)); };
   P._cdClose = function (i, early) {
     var s = this.s, cd = s.cds[i];
-    var interest = early ? Math.max(0, Math.round(cd.int * (s.d - cd.d0) / (cd.d1 - cd.d0)) - Math.round(cd.p * cd.rate / 100 / 2)) : cd.int;
+    var interest = early ? this.cdBreakInterest(cd) : cd.int;
     var tax = Math.round(interest * RULES.taxPay * s.taxMult);
     s.cds.splice(i, 1);
     this._cash(cd.p + interest, 'cd'); if (tax) this._cash(-tax, 'tax');
@@ -212,6 +232,7 @@
     return { ok: true, interest: interest, tax: tax, p: cd.p };
   };
   P.cdBreak = function (id) {
+    if (this.s.done) return OVER;
     for (var i = 0; i < this.s.cds.length; i++) if (this.s.cds[i].id === id) { this._act('cdbreak', id); return this._cdClose(i, true); }
     return { ok: false, why: 'Not found.' };
   };
@@ -219,7 +240,9 @@
   /* ---------- student loan ---------- */
   P.loanPay = function (amt) {
     var s = this.s, L = s.loan;
+    if (s.done) return OVER;
     if (!L || L.bal <= 0) return { ok: false, why: 'Nothing to pay.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
     amt = Math.min(Math.floor(amt), L.bal);
     if (!(amt > 0)) return { ok: false, why: 'Enter an amount.' };
     if (amt > s.cash) return { ok: false, why: 'Not enough cash.' };
@@ -271,16 +294,26 @@
       pmi: downFrac < 0.2 && loan > 0 ? Math.round(loan * RULES.pmi / 12) : 0, cap: price > 0 ? (rent - costs) * 12 / price : 0 };
   };
   P.reserveNow = function (L) { return Math.max(0.8, L.reserve - 0.01 * Math.floor((this.s.d - L.d0) / DPM)); };
+  // The least the seller will take. They get more flexible the longer it sits, but never give it away:
+  // no accepted offer is low enough to sell on to a cash buyer the same day at a profit.
+  P.sellerFloor = function (L) {
+    var val = this.propValue({ full0: L.full0, d0: L.d0, cond: L.cond });
+    return Math.min(L.ask, Math.max(Math.round(L.ask * this.reserveNow(L)), Math.round(val * 0.9)));
+  };
   P.propOffer = function (id, price, downFrac) {
     var s = this.s, L = this.listing(id);
+    if (s.done) return OVER;
     if (!L || L.d0 > s.d || L.d1 <= s.d) return { ok: false, why: 'That listing is gone.' };
+    if (this._prop(id) || (s.soldProps || []).indexOf(id) >= 0) return { ok: false, why: 'That listing is gone.' };
+    if (!num(price) || !(price > 0)) return { ok: false, why: 'Enter a price.' };
+    if (!num(downFrac) || downFrac < 0.1 || downFrac > 1) return { ok: false, why: 'The down payment must be between 10% and 100%.' };
     if (s.offers[id] && s.d - s.offers[id] < DPM) return { ok: false, why: 'The seller turned you down. They will not hear another offer until next month.' };
     price = Math.round(price);
     var q = this.propQuote(L, price, downFrac);
     if (q.need > s.cash) return { ok: false, why: 'You need ' + BW.fmtMoney(q.need) + ' in cash for the down payment and closing costs.' };
     if (!q.dti.ok) return { ok: false, why: 'The bank said no. Your monthly debt payments would be ' + Math.round(q.dti.ratio * 100) + '% of your income. The limit is ' + Math.round(RULES.dti * 100) + '%.' };
-    if (price < Math.round(L.ask * this.reserveNow(L))) { s.offers[id] = s.d; this._act('offer', id, price, 0); return { ok: false, rejected: true, why: 'Offer rejected. The seller wants more.' }; }
     var val = this.propValue({ full0: L.full0, d0: L.d0, cond: L.cond });
+    if (price < this.sellerFloor(L)) { s.offers[id] = s.d; this._act('offer', id, price, 0); return { ok: false, rejected: true, why: 'Offer rejected. The seller wants more.' }; }
     var p = { id: L.id, type: L.type, tname: L.tname, grade: L.grade, addr: L.addr, com: L.com, units: L.units, full0: L.full0, d0: L.d0, rent0: L.rent0, cond: L.cond,
       buyD: s.d, price: price, basis: price + q.closing, loan: q.loan > 0 ? { bal: q.loan, rate: q.rate, pay: q.pay, orig: q.loan, pmi: downFrac < 0.2 } : null,
       vacant: 1, lease: 0, reno: 0, sale: null, sellDays: L.sellDays, net: 0, renod: false };
@@ -297,6 +330,7 @@
   };
   P.propRenovate = function (id) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p || p.reno > 0 || p.sale) return { ok: false, why: 'Not possible right now.' };
     if (p.cond >= 0.97) return { ok: false, why: 'It is already in top condition.' };
     var q = this.renoQuote(p);
@@ -316,6 +350,7 @@
   };
   P.propRefi = function (id) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p || p.sale) return { ok: false, why: 'Not possible right now.' };
     var q = this.refiQuote(p);
     if (!q.dti.ok) return { ok: false, why: 'The bank said no: payments would be ' + Math.round(q.dti.ratio * 100) + '% of your income.' };
@@ -327,7 +362,9 @@
   };
   P.propPaydown = function (id, amt) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p || !p.loan) return { ok: false, why: 'No mortgage on this.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
     amt = Math.min(Math.floor(amt), p.loan.bal);
     if (!(amt > 0) || amt > s.cash) return { ok: false, why: 'Not enough cash.' };
     p.loan.bal -= amt; if (p.loan.bal <= 0) p.loan = null;
@@ -351,7 +388,7 @@
     var tax = this._settle(lt ? 0 : gain, lt ? gain : 0, false);
     var net = px - closing - bal - tax;
     this._cash(px - closing - bal, 'realestate'); if (tax) this._cash(-tax, 'tax');
-    s.tot.tax += tax; s.tot.realized += gain;
+    s.tot.tax += tax; s.tot.taxGain = (s.tot.taxGain || 0) + tax; s.tot.realized += gain;
     this._pme('prop:' + p.id, 'realestate', -net);
     if (p.renod && gain > 0 && s.d - p.buyD < 2 * DPY) s.st.flips++;
     s.props.splice(s.props.indexOf(p), 1);
@@ -360,15 +397,17 @@
   };
   P.propSell = function (id, quick) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p) return { ok: false, why: 'Not found.' };
     if (p.sale) return { ok: false, why: 'It is already on the market.' };
+    if (p.reno > 0) return { ok: false, why: 'The builders are still in. You can sell once the work is finished.' };
     this._act('propsell', id, quick ? 1 : 0);
     if (quick) return this._propClose(p, Math.round(this.propValue(p) * RULES.quickSale), true);
     var slow = this.tape.M.hg[s.d] < 0 ? 1.6 : 1;
     p.sale = { d: s.d + Math.round(p.sellDays * slow), f: 0.97 + 0.04 * hrand(this.tape.seed, 'sale', p.id) };
     return { ok: true, listed: true, days: p.sale.d - s.d };
   };
-  P.propCancelSale = function (id) { var p = this._prop(id); if (p && p.sale) { p.sale = null; this._act('propunlist', id); return { ok: true }; } return { ok: false }; };
+  P.propCancelSale = function (id) { var p = this._prop(id); if (this.s.done) return OVER; if (p && p.sale) { p.sale = null; this._act('propunlist', id); return { ok: true }; } return { ok: false }; };
 
   P._propMonth = function (p, m) {
     var s = this.s, seed = this.tape.seed, self = this;
@@ -428,7 +467,9 @@
   P._biz = function (type) { for (var i = 0; i < this.s.biz.length; i++) if (this.s.biz[i].type === type) return this.s.biz[i]; return null; };
   P.selfCount = function () { return this.s.biz.filter(function (x) { return x.self; }).length; };
   P.bizBuy = function (type) {
-    var s = this.s, b = BW.BIZ_BY[type];
+    var s = this.s, b = null;
+    if (s.done) return OVER;
+    (this.tape.dest.biz || []).forEach(function (z) { if (z.id === type) b = z; });
     if (!b) return { ok: false, why: 'Unknown business.' };
     if (this._biz(type)) return { ok: false, why: 'You already own one. Upgrade it instead.' };
     var cost = this.bizCost(b);
@@ -442,6 +483,7 @@
   };
   P.bizUpgrade = function (type) {
     var s = this.s, x = this._biz(type), b = BW.BIZ_BY[type];
+    if (s.done) return OVER;
     if (!x) return { ok: false, why: 'You do not own it.' };
     if (x.lvl >= 10) return { ok: false, why: 'It is as big as it gets.' };
     var cost = this.bizUpCost(b, x.lvl);
@@ -453,30 +495,42 @@
   };
   P.bizSetSelf = function (type, self) {
     var s = this.s, x = this._biz(type);
+    if (s.done) return OVER;
     if (!x) return { ok: false };
     if (self && !x.self && this.selfCount() >= s.selfSlots) return { ok: false, why: 'You can only run ' + s.selfSlots + ' business' + (s.selfSlots > 1 ? 'es' : '') + ' yourself. Put a manager in another one first.' };
     x.self = !!self; this._act('bizself', type, self ? 1 : 0);
     return { ok: true };
   };
+  // What it would cost to set the same business up again today, upgrades included.
+  P.bizReplace = function (x) {
+    var b = BW.BIZ_BY[x.type], t = this.bizCost(b);
+    for (var l = 1; l < x.lvl; l++) t += this.bizUpCost(b, l);
+    return t;
+  };
+  // What a buyer would pay. Always less than the cost of starting an identical one from scratch, so buying and
+  // selling straight away loses money. A business that has been earning well fetches more, a struggling one less.
   P.bizValue = function (x) {
-    var b = BW.BIZ_BY[x.type], n = x.ttm.length, sum = 0;
+    var b = BW.BIZ_BY[x.type], n = x.ttm.length, sum = 0, perf = 1;
     for (var i = 0; i < n; i++) sum += x.ttm[i];
-    var yearly = n ? sum * 12 / n : Math.round(this.bizBase(b, x.lvl) * 0.7);
-    return Math.max(Math.round(x.invested * 0.3), Math.round(x.invested * 0.5) + Math.round(3 * yearly));
+    var normal = this.bizBase(b, x.lvl) * 0.7;
+    if (n >= 3 && normal > 0) perf = clamp((sum * 12 / n) / normal, 0, 1.4);
+    return Math.round(this.bizReplace(x) * 0.85 * clamp(0.6 + 0.4 * perf, 0.6, 1.15));
   };
   P.bizSellQuote = function (x) {
     var v = this.bizValue(x), gain = v - x.invested, lt = this.s.d - x.buyD >= DPY;
     var tax = this._settle(lt ? 0 : gain, lt ? gain : 0, true);
     return { px: v, gain: gain, tax: tax, net: v - tax };
   };
-  P.bizSell = function (type, forced) {
+  P.bizSell = function (type) { return this._bizSell(type, false); };
+  P._bizSell = function (type, forced) {
     var s = this.s, x = this._biz(type);
+    if (s.done && !forced) return OVER;
     if (!x) return { ok: false, why: 'You do not own it.' };
     var v = this.bizValue(x); if (forced) v = Math.round(v * 0.8);
     var gain = v - x.invested, lt = s.d - x.buyD >= DPY;
     var tax = this._settle(lt ? 0 : gain, lt ? gain : 0, false);
     this._cash(v, 'business'); if (tax) this._cash(-tax, 'tax');
-    s.tot.tax += tax; s.tot.realized += gain;
+    s.tot.tax += tax; s.tot.taxGain = (s.tot.taxGain || 0) + tax; s.tot.realized += gain;
     this._pme('biz:' + type, 'business', -(v - tax));
     s.biz.splice(s.biz.indexOf(x), 1);
     if (!forced) this._act('bizsell', type);
@@ -503,15 +557,29 @@
   // o: { id (asset), side: 'buy' | 'sell', kind: 'limit' | 'stop', px (cents), amt (cents, buys) or frac (0..1 of holding, sells) }
   P.orderAdd = function (o) {
     var s = this.s;
+    if (!o || typeof o !== 'object') return { ok: false, why: 'Not a valid order.' };
     if (!this.canTrade(o.id)) return { ok: false, why: 'This is not trading.' };
-    if (!(o.px > 0)) return { ok: false, why: 'Set a trigger price.' };
+    if (o.side !== 'buy' && o.side !== 'sell') return { ok: false, why: 'Choose buy or sell.' };
+    if (o.kind !== 'limit' && o.kind !== 'stop') return { ok: false, why: 'Choose the kind of order.' };
+    if (!num(o.px) || !(o.px > 0)) return { ok: false, why: 'Set a trigger price.' };
     if (s.orders.length >= 30) return { ok: false, why: 'You already have 30 standing orders.' };
-    var x = { n: s.ordSeq++, id: o.id, side: o.side, kind: o.kind, px: Math.round(o.px), amt: o.amt ? Math.floor(o.amt) : 0, frac: o.frac || 0, d: s.d };
+    var px = Math.round(o.px), now = this.px(o.id), M$ = BW.fmtMoney;
+    if (px < 1) return { ok: false, why: 'Set a trigger price of at least one cent.' };
+    // An order that would go off the moment it is placed is almost always a slip of the finger.
+    if (o.side === 'buy' && o.kind === 'limit' && px >= now) return { ok: false, why: 'A "buy if it drops to" price has to be below today\'s price of ' + M$(now) + '. To buy at today\'s price, use Buy now.' };
+    if (o.side === 'buy' && o.kind === 'stop' && px <= now) return { ok: false, why: 'A "buy if it rises to" price has to be above today\'s price of ' + M$(now) + '.' };
+    if (o.side === 'sell' && o.kind === 'limit' && px <= now) return { ok: false, why: 'A "sell if it rises to" price has to be above today\'s price of ' + M$(now) + '. To sell at today\'s price, use Sell now.' };
+    if (o.side === 'sell' && o.kind === 'stop' && px >= now) return { ok: false, why: 'A "sell if it falls to" price has to be below today\'s price of ' + M$(now) + '.' };
+    var amt = 0, frac = 0;
+    if (o.side === 'buy') { if (!num(o.amt) || !(o.amt >= 100)) return { ok: false, why: 'Enter an amount of at least $1.' }; amt = Math.floor(o.amt); }
+    else { if (!num(o.frac) || !(o.frac > 0) || o.frac > 1) return { ok: false, why: 'Choose how much to sell.' }; frac = o.frac; if (!(this.qty(o.id) > 0)) return { ok: false, why: 'You do not own any.' }; }
+    var x = { n: s.ordSeq++, id: o.id, side: o.side, kind: o.kind, px: px, amt: amt, frac: frac, d: s.d };
     s.orders.push(x); this._act('order', o.id, o.side, o.kind, x.px, x.amt || x.frac);
     return { ok: true, order: x };
   };
   P.orderCancel = function (n) {
     var s = this.s;
+    if (s.done) return OVER;
     for (var i = 0; i < s.orders.length; i++) if (s.orders[i].n === n) { s.orders.splice(i, 1); this._act('ordercancel', n); return { ok: true }; }
     return { ok: false };
   };
@@ -525,13 +593,27 @@
       else hit = o.kind === 'limit' ? p >= o.px : p <= o.px;
       if (!hit) continue;
       var r;
-      if (o.side === 'buy') r = this.buy(o.id, Math.min(o.amt, Math.max(0, s.cash)), { auto: true });
-      else r = this.sell(o.id, o.frac >= 0.999 ? 'all' : rq(this.qty(o.id) * o.frac), { forced: true });
+      // A buy order never spends more than you set aside for it. If the cash is not there, it is cancelled and you are told.
+      if (o.side === 'buy') r = o.amt > s.cash ? { ok: false, why: 'cash' } : this._buy(o.id, o.amt, { auto: true });
+      else r = this._sell(o.id, o.frac >= 0.999 ? 'all' : rq(this.qty(o.id) * o.frac), { forced: true });
       s.orders.splice(i, 1);
       if (r.ok) { s.st.fills++; this.ev.push({ t: 'fill', id: o.id, side: o.side, kind: o.kind, px: p, q: r.q, net: r.net, total: r.total }); }
+      else this.ev.push({ t: 'orderfail', id: o.id, side: o.side, why: o.side === 'buy' ? 'cash' : 'none' });
     }
   };
-  P.setAuto = function (auto) { this.s.auto = auto; this._act('auto', JSON.stringify(auto)); };
+  P.setAuto = function (auto) {
+    var s = this.s, self = this, alloc = [], tot = 0, seen = {};
+    if (s.done) return OVER;
+    if (!auto || typeof auto !== 'object') return { ok: false, why: 'Not a valid plan.' };
+    (Array.isArray(auto.alloc) ? auto.alloc : []).forEach(function (a) {
+      if (!a || !self.tape.assets[a.id] || seen[a.id] || !num(a.pct) || !(a.pct > 0)) return;
+      seen[a.id] = 1; alloc.push({ id: a.id, pct: Math.min(100, a.pct) }); tot += Math.min(100, a.pct);
+    });
+    if (tot > 100.0001) return { ok: false, why: 'The shares add up to more than 100%.' };
+    s.auto = { on: !!auto.on && alloc.length > 0, keep: num(auto.keep) && auto.keep >= 0 ? Math.floor(auto.keep) : 100000, alloc: alloc };
+    this._act('auto', JSON.stringify(s.auto));
+    return { ok: true };
+  };
   P.autoInvest = function () {
     var s = this.s, a = s.auto;
     if (!a.on || !a.alloc.length) return;
@@ -539,18 +621,37 @@
     if (free < 1000) return;
     for (var i = 0; i < a.alloc.length; i++) {
       var al = a.alloc[i];
-      if (this.canTrade(al.id)) this.buy(al.id, Math.floor(free * al.pct / 100), { auto: true });
+      if (this.canTrade(al.id)) this._buy(al.id, Math.floor(free * al.pct / 100), { auto: true });
     }
   };
 
   /* ---------- casino (the UI plays the hands; the money and the odds are recorded here) ---------- */
-  P.casinoSettle = function (bet, payout, edge) { // payout includes the returned stake
+  P.casinoBet = function (bet, edge) {
     var s = this.s;
+    if (s.done) return OVER;
+    if (!num(bet) || Math.round(bet) !== bet || !(bet > 0)) return { ok: false, why: 'Place a bet.' };
     if (bet > s.cash) return { ok: false, why: 'Not enough cash.' };
-    this._cash(payout - bet, 'casino');
-    s.tot.casinoBet += bet; s.tot.casinoWon += payout; s.tot.casinoEV += bet * (edge || 0);
-    this._pme('casino', 'casino', bet - payout);
+    this._cash(-bet, 'casino');
+    s.casOpen = (s.casOpen || 0) + bet;
+    s.tot.casinoBet += bet; s.tot.casinoEV += bet * (num(edge) && edge > 0 && edge < 1 ? edge : 0);
+    this._pme('casino', 'casino', bet);
     return { ok: true };
+  };
+  // stake: how much of what is on the table this settles. payout: what comes back, stake included (0 if the bet lost).
+  P.casinoPay = function (stake, payout) {
+    var s = this.s;
+    if (!num(stake) || Math.round(stake) !== stake || !(stake > 0) || stake > (s.casOpen || 0)) return { ok: false, why: 'No bet to settle.' };
+    if (!num(payout) || Math.round(payout) !== payout || payout < 0 || payout > stake * 1000) return { ok: false, why: 'Not a valid payout.' };
+    if (s.done) return { ok: false, why: 'This run is over. A bet still on the table when the run ended is lost.' };
+    s.casOpen -= stake;
+    if (payout > 0) { this._cash(payout, 'casino'); s.tot.casinoWon += payout; this._pme('casino', 'casino', -payout); }
+    return { ok: true };
+  };
+  // one call for a bet that is decided on the spot (a spin of the wheel or the reels)
+  P.casinoSettle = function (bet, payout, edge) {
+    if (!num(payout) || Math.round(payout) !== payout || payout < 0 || !num(bet) || payout > bet * 1000) return { ok: false, why: 'Not a valid payout.' };
+    var r = this.casinoBet(bet, edge);
+    return r.ok ? this.casinoPay(bet, payout) : r;
   };
 
   /* ---------- worth ---------- */
@@ -567,11 +668,11 @@
     var s = this.s, self = this, t = s.cash - (s.loan ? s.loan.bal : 0), st = 0, lt = 0, id, i;
     for (id in s.pos) {
       var pos = s.pos[id], a = this.tape.assets[id], p = a.pc[s.d];
-      var gross = Math.round(pos.q * p), fee = Math.round(gross * this.feeBps(a) / 10000), net = gross - fee;
+      var gross = Math.floor(pos.q * p + 1e-9), fee = Math.ceil(gross * this.feeBps(a) / 10000 - 1e-9), net = gross - fee;
       t += net;
       for (i = 0; i < pos.lots.length; i++) { var l = pos.lots[i], part = Math.round(net * l[0] / pos.q); if (s.d - l[2] < DPY) st += part - l[1]; else lt += part - l[1]; }
     }
-    s.cds.forEach(function (c) { var v = self.cdValue(c); t += v - Math.round((v - c.p) * RULES.taxPay * s.taxMult); });
+    s.cds.forEach(function (c) { var it = self.cdBreakInterest(c); t += c.p + it - Math.round(it * RULES.taxPay * s.taxMult); });
     s.props.forEach(function (p) { var v = self.propValue(p), cl = Math.round(v * RULES.sellClose * s.agentMult), g = v - cl - p.basis; t += v - cl - (p.loan ? p.loan.bal : 0); if (s.d - p.buyD < DPY) st += g; else lt += g; });
     s.biz.forEach(function (x) { var v = self.bizValue(x), g = v - x.invested; t += v; if (s.d - x.buyD < DPY) st += g; else lt += g; });
     return t - this._settle(st, lt, true);
@@ -594,7 +695,7 @@
     for (id in s.pos) {
       var a = tape.assets[id], pos = s.pos[id];
       if (a.end === d) {
-        var r = this.sell(id, 'all', { px: a.endPx, noFee: true, forced: true });
+        var r = this._sell(id, 'all', { px: a.endPx, noFee: true, forced: true });
         if (a.endWhy === 'bankrupt') s.st.bustHeld++; else s.st.dealHeld++;
         this.ev.push({ t: 'delist', id: id, why: a.endWhy, net: r.net, gain: r.gain });
         continue;
@@ -611,7 +712,7 @@
           this._pme(id, CAT_OF[a.kind], -net);
           if (ps) ps.got += gross;
           var re = false;
-          if (s.drip && net > 0 && s.cash >= net && T.alive(a, d)) re = this.buy(id, net, { noFee: true, auto: true }).ok;
+          if (s.drip && net > 0 && s.cash >= net && T.alive(a, d)) re = this._buy(id, net, { noFee: true, auto: true }).ok;
           this.ev.push({ t: 'div', id: id, amt: net, re: re });
         }
       }
@@ -646,11 +747,11 @@
     if (rel % 5 === 0) {
       var nw = this.nw();
       s.hist.nw.push(nw); s.hist.liq.push(this.liq());
-      s.hist.cashW.push(nw > 0 ? clamp(Math.max(0, s.cash) / nw, 0, 1) : 1);
       if (nw > s.st.peakNW) s.st.peakNW = nw;
       if (s.st.peakNW > 0) { var ddn = nw / s.st.peakNW - 1; if (ddn < s.st.maxDD) s.st.maxDD = ddn; }
       var top = 0; for (id in s.pos) if (tape.assets[id].kind === 'stock') top = Math.max(top, this.posValue(id));
-      var gross = this.holdingsValue() + Math.max(0, s.cash) + this.cdTotal() + this.propEquity() + this.bizTotal();
+      var gross = this.holdingsValue() + Math.max(0, s.cash) + this.cdTotal() + Math.max(0, this.propEquity()) + this.bizTotal();
+      s.hist.cashW.push(gross > 0 ? clamp(Math.max(0, s.cash) / gross, 0, 1) : 1); // share of what you own that is sitting in cash (debts do not shrink the total)
       if (gross > 500000 && top / gross > s.st.maxW) s.st.maxW = top / gross;
       if (M.dd[d] < -0.3 && this.holdingsValue() > 0.5 * nw && s.st.panicSells === 0) s.st.heldCrash = 1;
     }
@@ -697,11 +798,11 @@
     for (var i = 0; i < ids.length && s.cash < 0; i++) {
       var id = ids[i], v = this.posValue(id), need = -s.cash;
       var frac = v > need * 1.3 ? need * 1.3 / v : 1;
-      var r = this.sell(id, frac >= 1 ? 'all' : rq(this.qty(id) * frac), { forced: true });
+      var r = this._sell(id, frac >= 1 ? 'all' : rq(this.qty(id) * frac), { forced: true });
       if (r.ok) sold.push(this.tape.assets[id].tkr);
     }
     while (s.cash < 0 && s.cds.length) { this._cdClose(0, true); sold.push('a term deposit'); }
-    while (s.cash < 0 && s.biz.length) { var x = s.biz[s.biz.length - 1]; sold.push(BW.BIZ_BY[x.type].name); this.bizSell(x.type, true); }
+    while (s.cash < 0 && s.biz.length) { var x = s.biz[s.biz.length - 1]; sold.push(BW.BIZ_BY[x.type].name); this._bizSell(x.type, true); }
     while (s.cash < 0 && s.props.length) { var p = s.props[0]; sold.push(p.addr); this._propClose(p, Math.round(this.propValue(p) * RULES.quickSale), true); }
     if (s.cash < -limit) {
       var w = -s.cash; this._cash(w, 'writeoff'); s.bankrupt = true;
@@ -709,7 +810,7 @@
     } else this.ev.push({ t: 'forced', sold: sold });
   };
 
-  P.endEarly = function () { this.s.endD = this.s.d; this.s.done = true; this.s.early = true; };
+  P.endEarly = function () { if (this.s.done) return; this.s.endD = this.s.d; this.s.done = true; this.s.early = true; };
 
   BW.Run = Run;
 
@@ -735,9 +836,12 @@
   BW.fmtMoney = function (c, opts) {
     opts = opts || {};
     var neg = c < 0, a = Math.abs(c) / 100, out;
-    if (opts.short && a >= 1e12) out = (a / 1e12).toFixed(2) + 'T';
-    else if (opts.short && a >= 1e9) out = (a / 1e9).toFixed(2) + 'B';
-    else if (opts.short && a >= 1e6) out = (a / 1e6).toFixed(2) + 'M';
+    // the cut-offs sit just under each round number so 999,999,999 reads as 1.00B, never 1000.00M
+    if (opts.short && a >= 999.995e15) out = (a / 1e18).toFixed(2) + ' quintillion';
+    else if (opts.short && a >= 999.995e12) out = (a / 1e15).toFixed(2) + ' quadrillion';
+    else if (opts.short && a >= 999.995e9) out = (a / 1e12).toFixed(2) + 'T';
+    else if (opts.short && a >= 999.995e6) out = (a / 1e9).toFixed(2) + 'B';
+    else if (opts.short && a >= 999.995e3) out = (a / 1e6).toFixed(2) + 'M';
     else if (opts.short && a >= 1e4) out = (a / 1e3).toFixed(1) + 'k';
     else {
       var dp = opts.whole || (opts.auto && a >= 1000) ? 0 : 2;

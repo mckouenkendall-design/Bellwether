@@ -122,11 +122,12 @@ button.item:active { background: var(--bg3); }
 /* chips, pills, buttons */
 .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; }
 .chips::-webkit-scrollbar { display: none; }
-.chip { flex: none; height: 36px; padding: 0 14px; border-radius: 18px; background: var(--bg2); color: var(--ink2); font-weight: 600; font-size: 13.5px; white-space: nowrap; }
+.chip { flex: none; height: 40px; padding: 0 14px; border-radius: 18px; background: var(--bg2); color: var(--ink2); font-weight: 600; font-size: 13.5px; white-space: nowrap; }
+.chip { border-radius: 20px; }
 .chip.on { background: var(--ink); color: var(--bg); }
-.chip.sm { height: 30px; padding: 0 11px; font-size: 12.5px; }
+.chip.sm { height: 34px; padding: 0 11px; font-size: 12.5px; }
 .seg { display: flex; background: var(--bg2); border-radius: 12px; padding: 3px; gap: 2px; }
-.seg button { flex: 1; height: 38px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink2); white-space: nowrap; padding: 0 6px; }
+.seg button { flex: 1; height: 42px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink2); white-space: nowrap; padding: 0 6px; }
 .seg button.on { background: var(--bg3); color: var(--ink); box-shadow: 0 1px 0 rgba(255, 255, 255, .05) inset; }
 .btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 18px; border-radius: 14px; font-weight: 700; font-size: 16px; background: var(--bg3); color: var(--ink); width: 100%; text-align: center; transition: transform .06s; }
 .btn:active { transform: scale(.975); }
@@ -146,7 +147,7 @@ button.item:active { background: var(--bg3); }
 #transport .pp svg { width: 20px; height: 20px; }
 #transport .step { flex: none; height: 44px; padding: 0 10px; border-radius: 13px; background: var(--bg3); font-weight: 700; font-size: 13px; color: var(--ink2); }
 #transport .spd { flex: 1; display: flex; gap: 4px; background: var(--bg); border-radius: 13px; padding: 3px; min-width: 0; }
-#transport .spd button { flex: 1; height: 38px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+#transport .spd button { flex: 1; height: 44px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: var(--ink3); font-variant-numeric: tabular-nums; }
 #transport .spd button.on { background: var(--bg3); color: var(--ink); }
 #transport.paused .pp { animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--brass) 25%, transparent); } }
@@ -170,7 +171,8 @@ button.item:active { background: var(--bg3); }
 .sheet .sh-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 22px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .sheet .sh-foot { flex: none; padding: 10px 16px calc(var(--sab) + 12px); border-top: 1px solid var(--line); background: var(--bg); }
 #toasts { position: absolute; left: 12px; right: 12px; top: calc(var(--sat) + 8px); z-index: 40; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
-.toast { background: var(--ink); color: var(--bg); border-radius: 13px; padding: 10px 14px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); animation: tin .22s ease-out; pointer-events: auto; display: flex; gap: 10px; align-items: flex-start; text-align: left; width: 100%; }
+.toast { background: var(--ink); color: var(--bg); border-radius: 13px; padding: 10px 14px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); animation: tin .22s ease-out; pointer-events: none; display: flex; gap: 10px; align-items: flex-start; text-align: left; width: 100%; }
+.toast.act { pointer-events: auto; }
 .toast.out { opacity: 0; transform: translateY(-8px); transition: all .25s; }
 .toast small { display: block; font-weight: 500; opacity: .8; font-size: 12.5px; }
 .toast.good { background: var(--up); color: #04150E; } .toast.bad { background: var(--down); color: #1E0603; } .toast.brass { background: var(--brass); color: var(--brassInk); }
@@ -294,6 +296,18 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 .rout button { height: 40px; border-radius: 6px; background: rgba(255, 255, 255, .12); font-weight: 700; font-size: 12.5px; color: #fff; position: relative; }
 
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; transition-duration: .01s !important; } }
+
+/* very narrow phones */
+@media (max-width: 359px) {
+  .item { gap: 9px; padding-left: 11px; padding-right: 11px; }
+  .item canvas.spark { display: none; }
+  .item .t1 { overflow-wrap: anywhere; }
+  .pcard { width: 46px; height: 68px; font-size: 16px; padding: 4px 5px; }
+  .pcard .sm { font-size: 13px; }
+  .pcard .big { font-size: 21px; }
+  #transport .spd button { font-size: 12.5px; }
+}
+.nowrap { white-space: nowrap; }
 
 </style>
 </head>
@@ -1075,6 +1089,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       co.post = 30;
 
       // cash
+      var vBooks0 = value(co, d); // worth of a share just before the quarter's cash reaches the balance sheet
       var reinvest = Math.max(0, co.g) * co.ci * revQ;
       var fcf = ni - reinvest;
       var prev = co.q.length ? co.q[co.q.length - 1] : null;
@@ -1096,6 +1111,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
           co.dps = cutTo; co.strain = 0; co.rx -= rQ.range(0.03, 0.09);
         }
       }
+      if (co.deal) co.dps = 0; // a company that has agreed to be bought stops declaring dividends
       var divTotal = co.dps * co.sh;
       var after = fcf - divTotal;
       var bought = 0;
@@ -1118,7 +1134,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       var rec = { d: d, rev: revQ, om: omQ, ni: ni, eps: eps, est: est, sur: sur, dps: co.dps, debt: co.debt, sh: co.sh, g: revYoY, int: interest, ebit: ebit, one: co.oneOff };
       co.q.push(rec);
       co.omSum = 0; co.revSum = 0; co.qDays = 0; co.oneOff = 0;
-      if (co.dps > 0) co.divs.push({ d: Math.min(d + 10, ctx.N - 1), amt: Math.round(co.dps * 10000) / 10000 });
+      // The dividend is declared today and paid in ten trading days. See divAcc below for how it sits in the price.
+      var payD = Math.min(d + 10, ctx.N - 1), dAmt = co.dps > 0 ? Math.round(co.dps * 10000) / 10000 : 0, accNow = divAcc(co, d);
+      if (dAmt > 0) { co.divs.push({ d: payD, amt: dAmt }); co.divPend = payD; }
+      co.dT0 = d; co.dA0 = accNow; co.dT1 = payD; co.dA1 = dAmt;
+      co.repFrom = d; co.repTo = d + 60;
+      co.bookStep = value(co, d) - vBooks0; co.bookDay = d; // exactly how much the books moved a share today
 
       // headline
       var epsS = (eps < 0 ? '-$' : '$') + Math.abs(eps).toFixed(2);
@@ -1413,6 +1434,35 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       e.fn(co, d);
     }
 
+    /* ---------- no steps you can see coming ----------
+     * Two things would otherwise move a share price by a known amount on a known day, and anything like that can be
+     * traded for free money (buy the day before, sell the day after):
+     *   1. A dividend. The price has to fall by the dividend on the day it is paid, or collecting it costs nothing.
+     *      So the next payout builds up in the price a little each day and drops out on pay day. Hold for a tenth of
+     *      the quarter and you earn about a tenth of the dividend, whichever days you pick.
+     *   2. The books. Profit a company keeps (or cash it burns) reaches its balance sheet once a quarter, on report
+     *      day. The price leans into that gradually over the quarter, so report day only moves on the surprise.
+     * Both wash out to nothing over a full quarter: long-term returns are unchanged. */
+    function divAcc(co, d) { // dollars per share of the next dividend already in the price
+      if (co.dT1 == null) return 0;
+      if (co.deal && !co.dealSeen) { co.dealSeen = 1; if (!(co.divPend > d)) { co.dT0 = d; co.dA0 = 0; co.dT1 = ctx.N + 1; co.dA1 = 0; } }
+      if (d >= co.dT1) { co.dT0 = co.dT1; co.dA0 = 0; co.dT1 = co.dT0 + 60; co.dA1 = co.deal ? 0 : Math.max(0, co.dps); } // paid: start building towards the next one
+      var span = co.dT1 - co.dT0;
+      return span > 0 ? co.dA0 + (co.dA1 - co.dA0) * (d - co.dT0) / span : co.dA1;
+    }
+    function retAcc(co, d) { // dollars per share of this quarter's kept profit (or burnt cash) already in the price
+      if (co.deal || !(co.qDays > 0) || !(co.sh > 0)) return 0;
+      if (co.repTo == null || d > co.repTo) { // first quarter after listing: work out when the first report falls
+        var first = co.start + 21; co.repFrom = co.start; co.repTo = first + (((co.qOff - first % 60) % 60) + 60) % 60;
+      }
+      // the same sums the report will do, on the figures the public can see so far this quarter
+      var M = ctx.M, revQ = co.revSum / co.qDays / 4 * dexp(-co.hidR), omQ = co.omSum / co.qDays - co.hidM;
+      var interest = co.debt > 0 ? co.debt * co.dRate / 100 / 4 : co.debt * Math.max(0, M.rate[d] - 0.5) / 100 / 4;
+      var pre = revQ * omQ - interest - co.oneOff, ni = pre > 0 ? pre * (1 - TAX) : pre;
+      var after = ni - Math.max(0, co.g) * co.ci * revQ - Math.max(0, co.dps) * co.sh;
+      return after / co.sh * clamp((d - co.repFrom) / Math.max(1, co.repTo - co.repFrom), 0, 1);
+    }
+
     /* ---------- daily step ---------- */
     E.step = function (d) {
       var M = ctx.M, st = ctx.st, i, co;
@@ -1470,7 +1520,15 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
           co.pc[d] = 0; co.fvA[d] = 0; co.shA[d] = co.sh; continue;
         }
         p = priceOf(co, d);
-        co.pc[d] = Math.max(1, Math.round(p * 100));
+        // kept profit is valued the way the rest of the business is (so it scales with the mood of the moment); a dividend is plain cash
+        var basePx = Math.max(1, Math.round(p * 100)), moodX = co.fv > 0 && !co.deal ? p / co.fv : 1;
+        if (co.bookDay === d && !co.deal) { // report day: whatever the running estimate got wrong is carried forward and fades over the next quarter, instead of landing today
+          co.resC = clamp((co.leanRet || 0) - co.bookStep * moodX, -0.1 * p, 0.1 * p); co.resT = d;
+        }
+        co.leanRet = co.deal ? 0 : retAcc(co, d) * moodX + (co.resT != null ? co.resC * Math.max(0, 1 - (d - co.resT) / 60) : 0);
+        // Under about a dollar a share one cent is a big step, so the lean is faded out there rather than let rounding turn it into a pattern.
+        var lean = Math.round((divAcc(co, d) + co.leanRet) * 100 * clamp((basePx - 50) / 150, 0, 1));
+        co.pc[d] = Math.max(1, basePx + Math.max(lean, -Math.floor(basePx / 2)));
         co.fvA[d] = co.fv; co.shA[d] = co.sh;
       }
     };
@@ -1785,13 +1843,14 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       M.idx[d] = d === 0 ? 1000 : M.idx[d - 1] * ratio;
       M.tr[d] = d === 0 ? 1000 : M.tr[d - 1] * (ratio + (sumPrev > 0 ? divs / sumPrev : 0));
       if (d > 0) { fundAcc += fundF * (sumPrev > 0 ? divs / sumPrev : 0); fundF *= ratio * (1 - fund.fee * DT); }
-      fund.pc[d] = Math.round(fundF * 100);
+      // The fund's price includes dividends it has collected but not yet handed on, and steps down on the day it pays them out.
       if (d % 60 === 59 && fundAcc > 0.0001) { fund.divs.push({ d: d, amt: Math.round(fundAcc * 10000) / 10000 }); fundAcc = 0; }
+      fund.pc[d] = Math.round((fundF + fundAcc) * 100);
       for (i = 0; i < secList.length; i++) {
         var sf = secFunds[secList[i].id], a2 = secAgg[secList[i].id];
         if (d > 0 && a2 && a2.p > 0) { sf.acc += sf.f * a2.dv / a2.p; sf.f *= a2.n / a2.p * (1 - sf.fee * DT); }
-        sf.pc[d] = Math.max(1, Math.round(sf.f * 100));
         if (d % 60 === 59 && sf.acc > 0.0001) { sf.divs.push({ d: d, amt: Math.round(sf.acc * 10000) / 10000 }); sf.acc = 0; }
+        sf.pc[d] = Math.max(1, Math.round((sf.f + sf.acc) * 100));
       }
       M.pe[d] = d % 5 === 0 ? (niNow > 0 ? clamp(capNow / niNow, 4, 80) : 80) : (d > 0 ? M.pe[d - 1] : 16);
 
@@ -1934,6 +1993,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         var mis = clamp(0.07 * rP.n(), -0.18, 0.16);
         var motivated = rP.chance(0.16);
         if (motivated) mis -= 0.03;
+        if (mis < -0.1) mis = -0.1; // nothing is listed so far under its value that it could be flipped the same day
         var dur = Math.round((40 + 120 * rP.next()) * (mis < -0.06 ? 0.45 : 1));
         listings.push({ id: 'L' + (lid++), d0: Math.max(d, 0), d1: Math.min(N - 1, d + dur), type: pt.id, tname: pt.name, grade: gr, com: !!pt.com, units: pt.units,
           addr: rP.int(2, 180) + ' ' + rP.pick(STREETS), full0: Math.round(full), cond: r2(cond), ask: Math.round(val * dexp(mis) / 500) * 50000,
@@ -1942,6 +2002,14 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       }
     }
 
+    // What one dollar left in the index fund becomes, with payouts taxed at the dividend rate and put straight back in.
+    // This is what Dolly's money does, so it is the yardstick every other holding is measured against.
+    M.bench = new Float64Array(N); M.bench[0] = 1000;
+    for (var bd = 1, bq = 0; bd < N; bd++) {
+      while (bq < fund.divs.length && fund.divs[bq].d < bd) bq++;
+      var bpay = bq < fund.divs.length && fund.divs[bq].d === bd ? fund.divs[bq].amt * 100 * 0.85 : 0;
+      M.bench[bd] = M.bench[bd - 1] * (fund.pc[bd] + bpay) / fund.pc[bd - 1];
+    }
     var tape = { v: BW.ENGINE_VERSION, cfg: cfg, dest: dest, seed: seed, N: N, W: W, years: years, M: M, assets: assets, order: order, companies: companies, news: news,
       life: life, listings: listings, sectors: secList, fundId: 'herd' };
     return tape;
@@ -2080,11 +2148,17 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   var P = Run.prototype;
 
   /* ---------- basics ---------- */
-  P._cash = function (amt, cat) { this.s.cash += amt; this.s.flow[cat] = (this.s.flow[cat] || 0) + amt; };
+  P._cash = function (amt, cat) {
+    // The last line of defence: nothing that is not a whole number of cents ever reaches the balance.
+    if (typeof amt !== 'number' || !isFinite(amt) || Math.round(amt) !== amt) throw new Error('Bad cash amount (' + cat + '): ' + amt);
+    this.s.cash += amt; this.s.flow[cat] = (this.s.flow[cat] || 0) + amt;
+  };
+  function num(x) { return typeof x === 'number' && isFinite(x); }
+  var OVER = { ok: false, why: 'This run is over.' };
   P._act = function () { var a = Array.prototype.slice.call(arguments); a.unshift(this.s.d); this.s.acts.push(a); };
   P._pme = function (key, cat, out) { // out > 0: cash put into this thing. out < 0: cash it returned
     var p = this.s.pme[key] || (this.s.pme[key] = { u: 0, paid: 0, got: 0, cat: cat });
-    p.u += out / this.tape.M.tr[this.s.d];
+    p.u += out / this.tape.M.bench[this.s.d];
     if (out > 0) p.paid += out; else p.got -= out;
   };
   P.asset = function (id) { return this.tape.assets[id]; };
@@ -2114,18 +2188,24 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   /* ---------- buying and selling ---------- */
   P.canTrade = function (id) { var a = this.tape.assets[id]; return !!a && T.alive(a, this.s.d) && !this.s.done; };
 
-  P.buy = function (id, amt, opts) {
+  // What the player can ask for. The extra switches (no fee, a set price, forced sales) are for the engine's own use
+  // only: reinvested dividends, takeovers, standing orders and a maxed-out card.
+  P.buy = function (id, amt, opts) { return this._buy(id, amt, { dry: !!(opts && opts.dry) }); };
+  P.sell = function (id, qty, opts) { return this._sell(id, qty, { dry: !!(opts && opts.dry) }); };
+  P._buy = function (id, amt, opts) {
     var s = this.s, a = this.tape.assets[id];
     opts = opts || {};
     if (!this.canTrade(id)) return { ok: false, why: 'This is not trading.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
     amt = Math.floor(amt);
     if (!(amt > 0)) return { ok: false, why: 'Enter an amount.' };
+    if (!opts.auto && amt < 100) return { ok: false, why: 'The smallest order is $1.' };
     if (amt > s.cash) return { ok: false, why: 'You only have ' + BW.fmtMoney(Math.max(0, s.cash)) + ' in cash.' };
     var p = a.pc[s.d];
-    var fee = opts.noFee ? 0 : Math.round(amt * this.feeBps(a) / 10000);
+    var fee = opts.noFee ? 0 : Math.ceil(amt * this.feeBps(a) / 10000 - 1e-9);
     var q = Math.floor((amt - fee) / p * 1e6) / 1e6;
     if (!(q > 0)) return { ok: false, why: 'That is too little to buy any.' };
-    var cost = Math.round(q * p);
+    var cost = Math.ceil(q * p - 1e-9);
     if (opts.dry) return { ok: true, q: q, cost: cost, fee: fee, total: cost + fee, px: p };
     var pos = s.pos[id] || (s.pos[id] = { q: 0, lots: [], dp: 0 });
     pos.lots.push([q, cost + fee, s.d]);
@@ -2147,17 +2227,19 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
 
   // qty: number of shares, or 'all'. opts: { dry, px (override, cents), noFee, forced }
-  P.sell = function (id, qty, opts) {
+  P._sell = function (id, qty, opts) {
     var s = this.s, a = this.tape.assets[id], pos = s.pos[id];
     opts = opts || {};
     if (!pos || !(pos.q > 0)) return { ok: false, why: 'You do not own any.' };
     if (opts.px == null && !this.canTrade(id)) return { ok: false, why: 'This is not trading.' };
+    if (qty !== 'all' && !num(qty)) return { ok: false, why: 'Enter an amount.' };
     if (qty === 'all' || qty >= pos.q - 1e-9) qty = pos.q;
     qty = rq(qty);
     if (!(qty > 0)) return { ok: false, why: 'Enter an amount.' };
     var p = opts.px != null ? opts.px : a.pc[s.d];
-    var gross = Math.round(qty * p);
-    var fee = opts.noFee ? 0 : Math.round(gross * this.feeBps(a) / 10000);
+    var gross = Math.floor(qty * p + 1e-9);
+    if (gross < 100 && qty < pos.q && !opts.forced && opts.px == null) return { ok: false, why: 'The smallest sale is $1, unless you sell everything.' };
+    var fee = opts.noFee ? 0 : Math.ceil(gross * this.feeBps(a) / 10000 - 1e-9);
     var net = gross - fee;
     var lots = opts.dry ? pos.lots.map(function (l) { return l.slice(); }) : pos.lots;
     var rem = qty, st = 0, lt = 0, costOut = 0, netLeft = net, i = 0;
@@ -2179,7 +2261,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     if (pos.q <= 1e-9 || !pos.lots.length) delete s.pos[id];
     this._cash(net, 'invest');
     if (tax) this._cash(-tax, 'tax');
-    s.tot.fees += fee; s.tot.tax += tax; s.tot.realized += net - costOut;
+    s.tot.fees += fee; s.tot.tax += tax; s.tot.taxGain = (s.tot.taxGain || 0) + tax; s.tot.realized += net - costOut;
     this._pme(id, CAT_OF[a.kind], -(net - tax));
     var ps = s.ps[id] || (s.ps[id] = { paid: 0, got: 0, days: 0, first: s.d });
     ps.got += net;
@@ -2202,7 +2284,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return Math.max(0.1, Math.round(r * 100) / 100);
   };
   P.cdOpen = function (term, amt) {
-    var s = this.s; amt = Math.floor(amt);
+    var s = this.s;
+    if (s.done) return OVER;
+    if (term !== 1 && term !== 3 && term !== 5) return { ok: false, why: 'Choose 1, 3 or 5 years.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
+    amt = Math.floor(amt);
     if (!(amt >= 10000)) return { ok: false, why: 'The minimum is $100.' };
     if (amt > s.cash) return { ok: false, why: 'Not enough cash.' };
     var rate = this.cdRate(term);
@@ -2213,9 +2299,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return { ok: true, rate: rate, interest: interest };
   };
   P.cdValue = function (cd) { return cd.p + Math.round(cd.int * clamp((this.s.d - cd.d0) / (cd.d1 - cd.d0), 0, 1)); };
+  // interest you actually receive if you break a deposit today: what has built up, less half a year's worth
+  P.cdBreakInterest = function (cd) { return Math.max(0, Math.round(cd.int * clamp((this.s.d - cd.d0) / (cd.d1 - cd.d0), 0, 1)) - Math.round(cd.p * cd.rate / 100 / 2)); };
   P._cdClose = function (i, early) {
     var s = this.s, cd = s.cds[i];
-    var interest = early ? Math.max(0, Math.round(cd.int * (s.d - cd.d0) / (cd.d1 - cd.d0)) - Math.round(cd.p * cd.rate / 100 / 2)) : cd.int;
+    var interest = early ? this.cdBreakInterest(cd) : cd.int;
     var tax = Math.round(interest * RULES.taxPay * s.taxMult);
     s.cds.splice(i, 1);
     this._cash(cd.p + interest, 'cd'); if (tax) this._cash(-tax, 'tax');
@@ -2224,6 +2312,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return { ok: true, interest: interest, tax: tax, p: cd.p };
   };
   P.cdBreak = function (id) {
+    if (this.s.done) return OVER;
     for (var i = 0; i < this.s.cds.length; i++) if (this.s.cds[i].id === id) { this._act('cdbreak', id); return this._cdClose(i, true); }
     return { ok: false, why: 'Not found.' };
   };
@@ -2231,7 +2320,9 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   /* ---------- student loan ---------- */
   P.loanPay = function (amt) {
     var s = this.s, L = s.loan;
+    if (s.done) return OVER;
     if (!L || L.bal <= 0) return { ok: false, why: 'Nothing to pay.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
     amt = Math.min(Math.floor(amt), L.bal);
     if (!(amt > 0)) return { ok: false, why: 'Enter an amount.' };
     if (amt > s.cash) return { ok: false, why: 'Not enough cash.' };
@@ -2283,16 +2374,26 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       pmi: downFrac < 0.2 && loan > 0 ? Math.round(loan * RULES.pmi / 12) : 0, cap: price > 0 ? (rent - costs) * 12 / price : 0 };
   };
   P.reserveNow = function (L) { return Math.max(0.8, L.reserve - 0.01 * Math.floor((this.s.d - L.d0) / DPM)); };
+  // The least the seller will take. They get more flexible the longer it sits, but never give it away:
+  // no accepted offer is low enough to sell on to a cash buyer the same day at a profit.
+  P.sellerFloor = function (L) {
+    var val = this.propValue({ full0: L.full0, d0: L.d0, cond: L.cond });
+    return Math.min(L.ask, Math.max(Math.round(L.ask * this.reserveNow(L)), Math.round(val * 0.9)));
+  };
   P.propOffer = function (id, price, downFrac) {
     var s = this.s, L = this.listing(id);
+    if (s.done) return OVER;
     if (!L || L.d0 > s.d || L.d1 <= s.d) return { ok: false, why: 'That listing is gone.' };
+    if (this._prop(id) || (s.soldProps || []).indexOf(id) >= 0) return { ok: false, why: 'That listing is gone.' };
+    if (!num(price) || !(price > 0)) return { ok: false, why: 'Enter a price.' };
+    if (!num(downFrac) || downFrac < 0.1 || downFrac > 1) return { ok: false, why: 'The down payment must be between 10% and 100%.' };
     if (s.offers[id] && s.d - s.offers[id] < DPM) return { ok: false, why: 'The seller turned you down. They will not hear another offer until next month.' };
     price = Math.round(price);
     var q = this.propQuote(L, price, downFrac);
     if (q.need > s.cash) return { ok: false, why: 'You need ' + BW.fmtMoney(q.need) + ' in cash for the down payment and closing costs.' };
     if (!q.dti.ok) return { ok: false, why: 'The bank said no. Your monthly debt payments would be ' + Math.round(q.dti.ratio * 100) + '% of your income. The limit is ' + Math.round(RULES.dti * 100) + '%.' };
-    if (price < Math.round(L.ask * this.reserveNow(L))) { s.offers[id] = s.d; this._act('offer', id, price, 0); return { ok: false, rejected: true, why: 'Offer rejected. The seller wants more.' }; }
     var val = this.propValue({ full0: L.full0, d0: L.d0, cond: L.cond });
+    if (price < this.sellerFloor(L)) { s.offers[id] = s.d; this._act('offer', id, price, 0); return { ok: false, rejected: true, why: 'Offer rejected. The seller wants more.' }; }
     var p = { id: L.id, type: L.type, tname: L.tname, grade: L.grade, addr: L.addr, com: L.com, units: L.units, full0: L.full0, d0: L.d0, rent0: L.rent0, cond: L.cond,
       buyD: s.d, price: price, basis: price + q.closing, loan: q.loan > 0 ? { bal: q.loan, rate: q.rate, pay: q.pay, orig: q.loan, pmi: downFrac < 0.2 } : null,
       vacant: 1, lease: 0, reno: 0, sale: null, sellDays: L.sellDays, net: 0, renod: false };
@@ -2309,6 +2410,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   P.propRenovate = function (id) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p || p.reno > 0 || p.sale) return { ok: false, why: 'Not possible right now.' };
     if (p.cond >= 0.97) return { ok: false, why: 'It is already in top condition.' };
     var q = this.renoQuote(p);
@@ -2328,6 +2430,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   P.propRefi = function (id) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p || p.sale) return { ok: false, why: 'Not possible right now.' };
     var q = this.refiQuote(p);
     if (!q.dti.ok) return { ok: false, why: 'The bank said no: payments would be ' + Math.round(q.dti.ratio * 100) + '% of your income.' };
@@ -2339,7 +2442,9 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   P.propPaydown = function (id, amt) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p || !p.loan) return { ok: false, why: 'No mortgage on this.' };
+    if (!num(amt)) return { ok: false, why: 'Enter an amount.' };
     amt = Math.min(Math.floor(amt), p.loan.bal);
     if (!(amt > 0) || amt > s.cash) return { ok: false, why: 'Not enough cash.' };
     p.loan.bal -= amt; if (p.loan.bal <= 0) p.loan = null;
@@ -2363,7 +2468,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     var tax = this._settle(lt ? 0 : gain, lt ? gain : 0, false);
     var net = px - closing - bal - tax;
     this._cash(px - closing - bal, 'realestate'); if (tax) this._cash(-tax, 'tax');
-    s.tot.tax += tax; s.tot.realized += gain;
+    s.tot.tax += tax; s.tot.taxGain = (s.tot.taxGain || 0) + tax; s.tot.realized += gain;
     this._pme('prop:' + p.id, 'realestate', -net);
     if (p.renod && gain > 0 && s.d - p.buyD < 2 * DPY) s.st.flips++;
     s.props.splice(s.props.indexOf(p), 1);
@@ -2372,15 +2477,17 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   P.propSell = function (id, quick) {
     var s = this.s, p = this._prop(id);
+    if (s.done) return OVER;
     if (!p) return { ok: false, why: 'Not found.' };
     if (p.sale) return { ok: false, why: 'It is already on the market.' };
+    if (p.reno > 0) return { ok: false, why: 'The builders are still in. You can sell once the work is finished.' };
     this._act('propsell', id, quick ? 1 : 0);
     if (quick) return this._propClose(p, Math.round(this.propValue(p) * RULES.quickSale), true);
     var slow = this.tape.M.hg[s.d] < 0 ? 1.6 : 1;
     p.sale = { d: s.d + Math.round(p.sellDays * slow), f: 0.97 + 0.04 * hrand(this.tape.seed, 'sale', p.id) };
     return { ok: true, listed: true, days: p.sale.d - s.d };
   };
-  P.propCancelSale = function (id) { var p = this._prop(id); if (p && p.sale) { p.sale = null; this._act('propunlist', id); return { ok: true }; } return { ok: false }; };
+  P.propCancelSale = function (id) { var p = this._prop(id); if (this.s.done) return OVER; if (p && p.sale) { p.sale = null; this._act('propunlist', id); return { ok: true }; } return { ok: false }; };
 
   P._propMonth = function (p, m) {
     var s = this.s, seed = this.tape.seed, self = this;
@@ -2440,7 +2547,9 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   P._biz = function (type) { for (var i = 0; i < this.s.biz.length; i++) if (this.s.biz[i].type === type) return this.s.biz[i]; return null; };
   P.selfCount = function () { return this.s.biz.filter(function (x) { return x.self; }).length; };
   P.bizBuy = function (type) {
-    var s = this.s, b = BW.BIZ_BY[type];
+    var s = this.s, b = null;
+    if (s.done) return OVER;
+    (this.tape.dest.biz || []).forEach(function (z) { if (z.id === type) b = z; });
     if (!b) return { ok: false, why: 'Unknown business.' };
     if (this._biz(type)) return { ok: false, why: 'You already own one. Upgrade it instead.' };
     var cost = this.bizCost(b);
@@ -2454,6 +2563,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   P.bizUpgrade = function (type) {
     var s = this.s, x = this._biz(type), b = BW.BIZ_BY[type];
+    if (s.done) return OVER;
     if (!x) return { ok: false, why: 'You do not own it.' };
     if (x.lvl >= 10) return { ok: false, why: 'It is as big as it gets.' };
     var cost = this.bizUpCost(b, x.lvl);
@@ -2465,30 +2575,42 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   };
   P.bizSetSelf = function (type, self) {
     var s = this.s, x = this._biz(type);
+    if (s.done) return OVER;
     if (!x) return { ok: false };
     if (self && !x.self && this.selfCount() >= s.selfSlots) return { ok: false, why: 'You can only run ' + s.selfSlots + ' business' + (s.selfSlots > 1 ? 'es' : '') + ' yourself. Put a manager in another one first.' };
     x.self = !!self; this._act('bizself', type, self ? 1 : 0);
     return { ok: true };
   };
+  // What it would cost to set the same business up again today, upgrades included.
+  P.bizReplace = function (x) {
+    var b = BW.BIZ_BY[x.type], t = this.bizCost(b);
+    for (var l = 1; l < x.lvl; l++) t += this.bizUpCost(b, l);
+    return t;
+  };
+  // What a buyer would pay. Always less than the cost of starting an identical one from scratch, so buying and
+  // selling straight away loses money. A business that has been earning well fetches more, a struggling one less.
   P.bizValue = function (x) {
-    var b = BW.BIZ_BY[x.type], n = x.ttm.length, sum = 0;
+    var b = BW.BIZ_BY[x.type], n = x.ttm.length, sum = 0, perf = 1;
     for (var i = 0; i < n; i++) sum += x.ttm[i];
-    var yearly = n ? sum * 12 / n : Math.round(this.bizBase(b, x.lvl) * 0.7);
-    return Math.max(Math.round(x.invested * 0.3), Math.round(x.invested * 0.5) + Math.round(3 * yearly));
+    var normal = this.bizBase(b, x.lvl) * 0.7;
+    if (n >= 3 && normal > 0) perf = clamp((sum * 12 / n) / normal, 0, 1.4);
+    return Math.round(this.bizReplace(x) * 0.85 * clamp(0.6 + 0.4 * perf, 0.6, 1.15));
   };
   P.bizSellQuote = function (x) {
     var v = this.bizValue(x), gain = v - x.invested, lt = this.s.d - x.buyD >= DPY;
     var tax = this._settle(lt ? 0 : gain, lt ? gain : 0, true);
     return { px: v, gain: gain, tax: tax, net: v - tax };
   };
-  P.bizSell = function (type, forced) {
+  P.bizSell = function (type) { return this._bizSell(type, false); };
+  P._bizSell = function (type, forced) {
     var s = this.s, x = this._biz(type);
+    if (s.done && !forced) return OVER;
     if (!x) return { ok: false, why: 'You do not own it.' };
     var v = this.bizValue(x); if (forced) v = Math.round(v * 0.8);
     var gain = v - x.invested, lt = s.d - x.buyD >= DPY;
     var tax = this._settle(lt ? 0 : gain, lt ? gain : 0, false);
     this._cash(v, 'business'); if (tax) this._cash(-tax, 'tax');
-    s.tot.tax += tax; s.tot.realized += gain;
+    s.tot.tax += tax; s.tot.taxGain = (s.tot.taxGain || 0) + tax; s.tot.realized += gain;
     this._pme('biz:' + type, 'business', -(v - tax));
     s.biz.splice(s.biz.indexOf(x), 1);
     if (!forced) this._act('bizsell', type);
@@ -2515,15 +2637,29 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   // o: { id (asset), side: 'buy' | 'sell', kind: 'limit' | 'stop', px (cents), amt (cents, buys) or frac (0..1 of holding, sells) }
   P.orderAdd = function (o) {
     var s = this.s;
+    if (!o || typeof o !== 'object') return { ok: false, why: 'Not a valid order.' };
     if (!this.canTrade(o.id)) return { ok: false, why: 'This is not trading.' };
-    if (!(o.px > 0)) return { ok: false, why: 'Set a trigger price.' };
+    if (o.side !== 'buy' && o.side !== 'sell') return { ok: false, why: 'Choose buy or sell.' };
+    if (o.kind !== 'limit' && o.kind !== 'stop') return { ok: false, why: 'Choose the kind of order.' };
+    if (!num(o.px) || !(o.px > 0)) return { ok: false, why: 'Set a trigger price.' };
     if (s.orders.length >= 30) return { ok: false, why: 'You already have 30 standing orders.' };
-    var x = { n: s.ordSeq++, id: o.id, side: o.side, kind: o.kind, px: Math.round(o.px), amt: o.amt ? Math.floor(o.amt) : 0, frac: o.frac || 0, d: s.d };
+    var px = Math.round(o.px), now = this.px(o.id), M$ = BW.fmtMoney;
+    if (px < 1) return { ok: false, why: 'Set a trigger price of at least one cent.' };
+    // An order that would go off the moment it is placed is almost always a slip of the finger.
+    if (o.side === 'buy' && o.kind === 'limit' && px >= now) return { ok: false, why: 'A "buy if it drops to" price has to be below today\'s price of ' + M$(now) + '. To buy at today\'s price, use Buy now.' };
+    if (o.side === 'buy' && o.kind === 'stop' && px <= now) return { ok: false, why: 'A "buy if it rises to" price has to be above today\'s price of ' + M$(now) + '.' };
+    if (o.side === 'sell' && o.kind === 'limit' && px <= now) return { ok: false, why: 'A "sell if it rises to" price has to be above today\'s price of ' + M$(now) + '. To sell at today\'s price, use Sell now.' };
+    if (o.side === 'sell' && o.kind === 'stop' && px >= now) return { ok: false, why: 'A "sell if it falls to" price has to be below today\'s price of ' + M$(now) + '.' };
+    var amt = 0, frac = 0;
+    if (o.side === 'buy') { if (!num(o.amt) || !(o.amt >= 100)) return { ok: false, why: 'Enter an amount of at least $1.' }; amt = Math.floor(o.amt); }
+    else { if (!num(o.frac) || !(o.frac > 0) || o.frac > 1) return { ok: false, why: 'Choose how much to sell.' }; frac = o.frac; if (!(this.qty(o.id) > 0)) return { ok: false, why: 'You do not own any.' }; }
+    var x = { n: s.ordSeq++, id: o.id, side: o.side, kind: o.kind, px: px, amt: amt, frac: frac, d: s.d };
     s.orders.push(x); this._act('order', o.id, o.side, o.kind, x.px, x.amt || x.frac);
     return { ok: true, order: x };
   };
   P.orderCancel = function (n) {
     var s = this.s;
+    if (s.done) return OVER;
     for (var i = 0; i < s.orders.length; i++) if (s.orders[i].n === n) { s.orders.splice(i, 1); this._act('ordercancel', n); return { ok: true }; }
     return { ok: false };
   };
@@ -2537,13 +2673,27 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       else hit = o.kind === 'limit' ? p >= o.px : p <= o.px;
       if (!hit) continue;
       var r;
-      if (o.side === 'buy') r = this.buy(o.id, Math.min(o.amt, Math.max(0, s.cash)), { auto: true });
-      else r = this.sell(o.id, o.frac >= 0.999 ? 'all' : rq(this.qty(o.id) * o.frac), { forced: true });
+      // A buy order never spends more than you set aside for it. If the cash is not there, it is cancelled and you are told.
+      if (o.side === 'buy') r = o.amt > s.cash ? { ok: false, why: 'cash' } : this._buy(o.id, o.amt, { auto: true });
+      else r = this._sell(o.id, o.frac >= 0.999 ? 'all' : rq(this.qty(o.id) * o.frac), { forced: true });
       s.orders.splice(i, 1);
       if (r.ok) { s.st.fills++; this.ev.push({ t: 'fill', id: o.id, side: o.side, kind: o.kind, px: p, q: r.q, net: r.net, total: r.total }); }
+      else this.ev.push({ t: 'orderfail', id: o.id, side: o.side, why: o.side === 'buy' ? 'cash' : 'none' });
     }
   };
-  P.setAuto = function (auto) { this.s.auto = auto; this._act('auto', JSON.stringify(auto)); };
+  P.setAuto = function (auto) {
+    var s = this.s, self = this, alloc = [], tot = 0, seen = {};
+    if (s.done) return OVER;
+    if (!auto || typeof auto !== 'object') return { ok: false, why: 'Not a valid plan.' };
+    (Array.isArray(auto.alloc) ? auto.alloc : []).forEach(function (a) {
+      if (!a || !self.tape.assets[a.id] || seen[a.id] || !num(a.pct) || !(a.pct > 0)) return;
+      seen[a.id] = 1; alloc.push({ id: a.id, pct: Math.min(100, a.pct) }); tot += Math.min(100, a.pct);
+    });
+    if (tot > 100.0001) return { ok: false, why: 'The shares add up to more than 100%.' };
+    s.auto = { on: !!auto.on && alloc.length > 0, keep: num(auto.keep) && auto.keep >= 0 ? Math.floor(auto.keep) : 100000, alloc: alloc };
+    this._act('auto', JSON.stringify(s.auto));
+    return { ok: true };
+  };
   P.autoInvest = function () {
     var s = this.s, a = s.auto;
     if (!a.on || !a.alloc.length) return;
@@ -2551,18 +2701,37 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     if (free < 1000) return;
     for (var i = 0; i < a.alloc.length; i++) {
       var al = a.alloc[i];
-      if (this.canTrade(al.id)) this.buy(al.id, Math.floor(free * al.pct / 100), { auto: true });
+      if (this.canTrade(al.id)) this._buy(al.id, Math.floor(free * al.pct / 100), { auto: true });
     }
   };
 
   /* ---------- casino (the UI plays the hands; the money and the odds are recorded here) ---------- */
-  P.casinoSettle = function (bet, payout, edge) { // payout includes the returned stake
+  P.casinoBet = function (bet, edge) {
     var s = this.s;
+    if (s.done) return OVER;
+    if (!num(bet) || Math.round(bet) !== bet || !(bet > 0)) return { ok: false, why: 'Place a bet.' };
     if (bet > s.cash) return { ok: false, why: 'Not enough cash.' };
-    this._cash(payout - bet, 'casino');
-    s.tot.casinoBet += bet; s.tot.casinoWon += payout; s.tot.casinoEV += bet * (edge || 0);
-    this._pme('casino', 'casino', bet - payout);
+    this._cash(-bet, 'casino');
+    s.casOpen = (s.casOpen || 0) + bet;
+    s.tot.casinoBet += bet; s.tot.casinoEV += bet * (num(edge) && edge > 0 && edge < 1 ? edge : 0);
+    this._pme('casino', 'casino', bet);
     return { ok: true };
+  };
+  // stake: how much of what is on the table this settles. payout: what comes back, stake included (0 if the bet lost).
+  P.casinoPay = function (stake, payout) {
+    var s = this.s;
+    if (!num(stake) || Math.round(stake) !== stake || !(stake > 0) || stake > (s.casOpen || 0)) return { ok: false, why: 'No bet to settle.' };
+    if (!num(payout) || Math.round(payout) !== payout || payout < 0 || payout > stake * 1000) return { ok: false, why: 'Not a valid payout.' };
+    if (s.done) return { ok: false, why: 'This run is over. A bet still on the table when the run ended is lost.' };
+    s.casOpen -= stake;
+    if (payout > 0) { this._cash(payout, 'casino'); s.tot.casinoWon += payout; this._pme('casino', 'casino', -payout); }
+    return { ok: true };
+  };
+  // one call for a bet that is decided on the spot (a spin of the wheel or the reels)
+  P.casinoSettle = function (bet, payout, edge) {
+    if (!num(payout) || Math.round(payout) !== payout || payout < 0 || !num(bet) || payout > bet * 1000) return { ok: false, why: 'Not a valid payout.' };
+    var r = this.casinoBet(bet, edge);
+    return r.ok ? this.casinoPay(bet, payout) : r;
   };
 
   /* ---------- worth ---------- */
@@ -2579,11 +2748,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     var s = this.s, self = this, t = s.cash - (s.loan ? s.loan.bal : 0), st = 0, lt = 0, id, i;
     for (id in s.pos) {
       var pos = s.pos[id], a = this.tape.assets[id], p = a.pc[s.d];
-      var gross = Math.round(pos.q * p), fee = Math.round(gross * this.feeBps(a) / 10000), net = gross - fee;
+      var gross = Math.floor(pos.q * p + 1e-9), fee = Math.ceil(gross * this.feeBps(a) / 10000 - 1e-9), net = gross - fee;
       t += net;
       for (i = 0; i < pos.lots.length; i++) { var l = pos.lots[i], part = Math.round(net * l[0] / pos.q); if (s.d - l[2] < DPY) st += part - l[1]; else lt += part - l[1]; }
     }
-    s.cds.forEach(function (c) { var v = self.cdValue(c); t += v - Math.round((v - c.p) * RULES.taxPay * s.taxMult); });
+    s.cds.forEach(function (c) { var it = self.cdBreakInterest(c); t += c.p + it - Math.round(it * RULES.taxPay * s.taxMult); });
     s.props.forEach(function (p) { var v = self.propValue(p), cl = Math.round(v * RULES.sellClose * s.agentMult), g = v - cl - p.basis; t += v - cl - (p.loan ? p.loan.bal : 0); if (s.d - p.buyD < DPY) st += g; else lt += g; });
     s.biz.forEach(function (x) { var v = self.bizValue(x), g = v - x.invested; t += v; if (s.d - x.buyD < DPY) st += g; else lt += g; });
     return t - this._settle(st, lt, true);
@@ -2606,7 +2775,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     for (id in s.pos) {
       var a = tape.assets[id], pos = s.pos[id];
       if (a.end === d) {
-        var r = this.sell(id, 'all', { px: a.endPx, noFee: true, forced: true });
+        var r = this._sell(id, 'all', { px: a.endPx, noFee: true, forced: true });
         if (a.endWhy === 'bankrupt') s.st.bustHeld++; else s.st.dealHeld++;
         this.ev.push({ t: 'delist', id: id, why: a.endWhy, net: r.net, gain: r.gain });
         continue;
@@ -2623,7 +2792,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
           this._pme(id, CAT_OF[a.kind], -net);
           if (ps) ps.got += gross;
           var re = false;
-          if (s.drip && net > 0 && s.cash >= net && T.alive(a, d)) re = this.buy(id, net, { noFee: true, auto: true }).ok;
+          if (s.drip && net > 0 && s.cash >= net && T.alive(a, d)) re = this._buy(id, net, { noFee: true, auto: true }).ok;
           this.ev.push({ t: 'div', id: id, amt: net, re: re });
         }
       }
@@ -2658,11 +2827,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     if (rel % 5 === 0) {
       var nw = this.nw();
       s.hist.nw.push(nw); s.hist.liq.push(this.liq());
-      s.hist.cashW.push(nw > 0 ? clamp(Math.max(0, s.cash) / nw, 0, 1) : 1);
       if (nw > s.st.peakNW) s.st.peakNW = nw;
       if (s.st.peakNW > 0) { var ddn = nw / s.st.peakNW - 1; if (ddn < s.st.maxDD) s.st.maxDD = ddn; }
       var top = 0; for (id in s.pos) if (tape.assets[id].kind === 'stock') top = Math.max(top, this.posValue(id));
-      var gross = this.holdingsValue() + Math.max(0, s.cash) + this.cdTotal() + this.propEquity() + this.bizTotal();
+      var gross = this.holdingsValue() + Math.max(0, s.cash) + this.cdTotal() + Math.max(0, this.propEquity()) + this.bizTotal();
+      s.hist.cashW.push(gross > 0 ? clamp(Math.max(0, s.cash) / gross, 0, 1) : 1); // share of what you own that is sitting in cash (debts do not shrink the total)
       if (gross > 500000 && top / gross > s.st.maxW) s.st.maxW = top / gross;
       if (M.dd[d] < -0.3 && this.holdingsValue() > 0.5 * nw && s.st.panicSells === 0) s.st.heldCrash = 1;
     }
@@ -2709,11 +2878,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     for (var i = 0; i < ids.length && s.cash < 0; i++) {
       var id = ids[i], v = this.posValue(id), need = -s.cash;
       var frac = v > need * 1.3 ? need * 1.3 / v : 1;
-      var r = this.sell(id, frac >= 1 ? 'all' : rq(this.qty(id) * frac), { forced: true });
+      var r = this._sell(id, frac >= 1 ? 'all' : rq(this.qty(id) * frac), { forced: true });
       if (r.ok) sold.push(this.tape.assets[id].tkr);
     }
     while (s.cash < 0 && s.cds.length) { this._cdClose(0, true); sold.push('a term deposit'); }
-    while (s.cash < 0 && s.biz.length) { var x = s.biz[s.biz.length - 1]; sold.push(BW.BIZ_BY[x.type].name); this.bizSell(x.type, true); }
+    while (s.cash < 0 && s.biz.length) { var x = s.biz[s.biz.length - 1]; sold.push(BW.BIZ_BY[x.type].name); this._bizSell(x.type, true); }
     while (s.cash < 0 && s.props.length) { var p = s.props[0]; sold.push(p.addr); this._propClose(p, Math.round(this.propValue(p) * RULES.quickSale), true); }
     if (s.cash < -limit) {
       var w = -s.cash; this._cash(w, 'writeoff'); s.bankrupt = true;
@@ -2721,7 +2890,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     } else this.ev.push({ t: 'forced', sold: sold });
   };
 
-  P.endEarly = function () { this.s.endD = this.s.d; this.s.done = true; this.s.early = true; };
+  P.endEarly = function () { if (this.s.done) return; this.s.endD = this.s.d; this.s.done = true; this.s.early = true; };
 
   BW.Run = Run;
 
@@ -2747,9 +2916,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   BW.fmtMoney = function (c, opts) {
     opts = opts || {};
     var neg = c < 0, a = Math.abs(c) / 100, out;
-    if (opts.short && a >= 1e12) out = (a / 1e12).toFixed(2) + 'T';
-    else if (opts.short && a >= 1e9) out = (a / 1e9).toFixed(2) + 'B';
-    else if (opts.short && a >= 1e6) out = (a / 1e6).toFixed(2) + 'M';
+    // the cut-offs sit just under each round number so 999,999,999 reads as 1.00B, never 1000.00M
+    if (opts.short && a >= 999.995e15) out = (a / 1e18).toFixed(2) + ' quintillion';
+    else if (opts.short && a >= 999.995e12) out = (a / 1e15).toFixed(2) + ' quadrillion';
+    else if (opts.short && a >= 999.995e9) out = (a / 1e12).toFixed(2) + 'T';
+    else if (opts.short && a >= 999.995e6) out = (a / 1e9).toFixed(2) + 'B';
+    else if (opts.short && a >= 999.995e3) out = (a / 1e6).toFixed(2) + 'M';
     else if (opts.short && a >= 1e4) out = (a / 1e3).toFixed(1) + 'k';
     else {
       var dp = opts.whole || (opts.auto && a >= 1000) ? 0 : 2;
@@ -2959,8 +3131,8 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return 'BW' + BW.ENGINE_VERSION + sc.code + BW.DEST[destId || 'earth'].code + '-' + enc32((seed >>> 0) % 1073741824, 6);
   };
   BW.parseCode = function (code) {
-    code = String(code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
-    var m = /^BW(\d)([A-Z])([A-Z])-?([A-Z2-9]{6})$/.exec(code);
+    code = String(code || '').toUpperCase().replace(/[\u2010-\u2015\u2212]/g, '-'); // phones like to turn a hyphen into a long dash
+    var m = /(?:^|[^A-Z0-9])BW(\d)([A-Z])([A-Z])[-\s]?([A-Z2-9]{6})(?![A-Z0-9])/.exec(code); // works on a bare code, a share link, or a whole pasted message
     if (!m) return { ok: false, why: 'That does not look like a challenge code. They look like BW1CE-K7QM2X.' };
     if (+m[1] !== BW.ENGINE_VERSION) return { ok: false, why: 'That code is from a different version of the game. Everyone needs to be on the same version.' };
     var scen = BW.SCENARIOS.filter(function (s) { return s.code === m[2]; })[0];
@@ -2980,16 +3152,44 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return d.toISOString().slice(0, 10);
   };
   // result codes: enough to compare with friends, with a checksum that catches typos (not cheats)
-  function b64e(s) { var out = '', i, A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    var bytes = []; for (i = 0; i < s.length; i++) { var c = s.charCodeAt(i); bytes.push(c < 128 ? c : 63); }
+  var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  function utf8(str) { // text to bytes, so names with accents or emoji survive the trip
+    var out = [], i, c;
+    for (i = 0; i < str.length; i++) {
+      c = str.charCodeAt(i);
+      if (c >= 0xD800 && c < 0xDC00 && i + 1 < str.length) { var d2 = str.charCodeAt(i + 1); if (d2 >= 0xDC00 && d2 < 0xE000) { c = 0x10000 + ((c - 0xD800) << 10) + (d2 - 0xDC00); i++; } }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+      else if (c < 0x10000) out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      else out.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
+  }
+  function unutf8(b) {
+    var out = '', i = 0, c;
+    while (i < b.length) {
+      c = b[i++];
+      if (c >= 0xF0) c = ((c & 7) << 18) | ((b[i++] & 63) << 12) | ((b[i++] & 63) << 6) | (b[i++] & 63);
+      else if (c >= 0xE0) c = ((c & 15) << 12) | ((b[i++] & 63) << 6) | (b[i++] & 63);
+      else if (c >= 0xC0) c = ((c & 31) << 6) | (b[i++] & 63);
+      if (!(c >= 0)) return null;
+      if (c >= 0x10000) { c -= 0x10000; out += String.fromCharCode(0xD800 + (c >> 10), 0xDC00 + (c & 1023)); } else out += String.fromCharCode(c);
+    }
+    return out;
+  }
+  function b64e(str) { var out = '', i, bytes = utf8(str);
     for (i = 0; i < bytes.length; i += 3) { var b0 = bytes[i], b1 = bytes[i + 1], b2 = bytes[i + 2];
-      out += A[b0 >> 2] + A[((b0 & 3) << 4) | ((b1 || 0) >> 4)] + (b1 === undefined ? '' : A[((b1 & 15) << 2) | ((b2 || 0) >> 6)]) + (b2 === undefined ? '' : A[b2 & 63]); }
+      out += B64[b0 >> 2] + B64[((b0 & 3) << 4) | ((b1 || 0) >> 4)] + (b1 === undefined ? '' : B64[((b1 & 15) << 2) | ((b2 || 0) >> 6)]) + (b2 === undefined ? '' : B64[b2 & 63]); }
     return out; }
-  function b64d(s) { var A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', out = '', i, n = 0, bits = 0;
-    for (i = 0; i < s.length; i++) { var k = A.indexOf(s[i]); if (k < 0) return null; n = (n << 6) | k; bits += 6; if (bits >= 8) { bits -= 8; out += String.fromCharCode((n >> bits) & 255); } }
-    return out; }
+  function b64d(str) { var bytes = [], i, n = 0, bits = 0;
+    for (i = 0; i < str.length; i++) { var k = B64.indexOf(str[i]); if (k < 0) return null; n = ((n << 6) | k) & 0xFFFF; bits += 6; if (bits >= 8) { bits -= 8; bytes.push((n >> bits) & 255); } }
+    return unutf8(bytes); }
+  BW.cleanName = function (name) { // what a name is allowed to be: up to 12 visible characters, no separators, no stray spaces
+    var chars = Array.from ? Array.from(String(name == null ? '' : name)) : String(name == null ? '' : name).split('');
+    return chars.filter(function (ch) { return ch !== '|' && ch >= ' '; }).slice(0, 12).join('').replace(/\s+/g, ' ').trim();
+  };
   BW.makeResult = function (r) { // r: { code, name, score, dolly, attempt, bankrupt }
-    var body = [r.code, String(r.name || 'Anon').replace(/[|]/g, '').slice(0, 12), Math.round(r.score / 100), Math.round(r.dolly / 100), r.attempt || 1, r.bankrupt ? 1 : 0].join('|');
+    var body = [r.code, BW.cleanName(r.name) || 'Anon', Math.round(r.score / 100), Math.round(r.dolly / 100), r.attempt || 1, r.bankrupt ? 1 : 0].join('|');
     return 'R.' + b64e(body + '|' + (BW.mix('result', body) % 46656).toString(36));
   };
   BW.parseResult = function (str) {
@@ -3001,16 +3201,24 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     if (p.length !== 7) return { ok: false, why: 'That result code is damaged.' };
     var chk = p.pop();
     if ((BW.mix('result', p.join('|')) % 46656).toString(36) !== chk) return { ok: false, why: 'That result code has a typo in it.' };
-    return { ok: true, code: p[0], name: p[1], score: +p[2] * 100, dolly: +p[3] * 100, attempt: +p[4], bankrupt: p[5] === '1' };
+    // A correct checksum only proves there is no typo. The contents still have to be sane before they go on a scoreboard.
+    var pc = BW.parseCode(p[0]), sc = +p[2], dl = +p[3], at = +p[4];
+    var whole = function (x, lo, hi) { return typeof x === 'number' && isFinite(x) && Math.round(x) === x && x >= lo && x <= hi; };
+    if (!pc.ok || pc.code !== p[0] || !/^-?\d+$/.test(p[2]) || !/^-?\d+$/.test(p[3]) || !whole(sc, -1e12, 1e13) || !whole(dl, -1e12, 1e13) || !whole(at, 1, 9999)) return { ok: false, why: 'That result code is not valid.' };
+    return { ok: true, code: p[0], name: BW.cleanName(p[1]) || 'Anon', score: sc * 100, dolly: dl * 100, attempt: at, bankrupt: p[5] === '1' };
   };
 
   /* ---------- the review ---------- */
   var CAT_LABEL = BW.CAT_LABEL = { stocks: 'Stocks you picked', herd: 'The index fund', sector: 'Sector funds', bonds: 'Bonds', cmdty: 'Commodities', crypto: 'The coin', cds: 'Term deposits', realestate: 'Real estate', business: 'Businesses', casino: 'Casino' };
   BW.analyze = function (run, dolly, scen) {
-    var s = run.s, tape = run.tape, M = tape.M, d = s.d, trNow = M.tr[d];
+    var s = run.s, tape = run.tape, M = tape.M, d = s.d, trNow = M.bench[d];
     var score = run.liq(), dScore = dolly.liq();
     var years = (d - s.day0) / 240;
-    var res = { score: score, dolly: dScore, nw: run.nw(), dollyNW: dolly.nw(), ratio: dScore > 100 ? Math.max(0, score) / dScore : (score > dScore ? 1.5 : score === dScore ? 1 : 0.5), years: years, bankrupt: s.bankrupt, early: !!s.early };
+    // How far ahead or behind, as a multiple of Dolly. Early in a run both of you can be near or below zero (the student loan),
+    // where a ratio means nothing, so the gap is then measured against the money you both started with instead.
+    var floor = 500000; // $5,000: what a standard run starts with
+    var ratio = dScore >= floor ? Math.max(0, score) / dScore : Math.max(0, 1 + (score - dScore) / floor);
+    var res = { score: score, dolly: dScore, nw: run.nw(), dollyNW: dolly.nw(), ratio: ratio, years: years, bankrupt: s.bankrupt, early: !!s.early };
     // public-market-equivalent: for every dollar that went into a thing, what would that dollar have become in the index on the same days?
     var cats = {}, items = [];
     for (var key in s.pme) {
@@ -3020,7 +3228,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       else if (key === 'casino') { name = 'Casino'; }
       else if (key.indexOf('prop:') === 0) { var pr = run._prop(key.slice(5)); if (pr) { val = run.propValue(pr) - (pr.loan ? pr.loan.bal : 0); name = pr.addr; } else { var L = run.listing(key.slice(5)); name = L ? L.addr : 'Property'; } }
       else if (key.indexOf('biz:') === 0) { var bx = run._biz(key.slice(4)); if (bx) val = run.bizValue(bx); name = BW.BIZ_BY[key.slice(4)].name; }
-      var alpha = val - p.u * trNow; // dollars ahead of (or behind) the index, in today's money
+      var alpha = val - p.u * trNow; // dollars ahead of (or behind) the same money left in the index fund, in today's money
       var profit = val + p.got - p.paid;
       var c = cats[p.cat] || (cats[p.cat] = { cat: p.cat, label: CAT_LABEL[p.cat], alpha: 0, profit: 0, paid: 0, val: 0 });
       c.alpha += alpha; c.profit += profit; c.paid += p.paid; c.val += val;
@@ -3031,9 +3239,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     res.best = items.filter(function (x) { return x.alpha > 0; }).slice(0, 3);
     res.worst = items.filter(function (x) { return x.alpha < 0; }).slice(-3).reverse();
     var explained = 0; res.cats.forEach(function (c) { explained += c.alpha; });
-    res.gap = res.nw - res.dollyNW;
+    // The score is walk-away value, so that is the gap that gets explained. It splits three ways: what each kind of
+    // holding did against the index, what selling up would cost each of you, and everything else (mostly idle cash).
+    res.gap = score - dScore;
     res.explained = explained;
-    res.idle = res.gap - explained; // cash on the sidelines, debt paid early, tax timing, everything else
+    res.exit = (score - res.nw) - (dScore - res.dollyNW); // tax and selling costs still to pay, yours less Dolly's
+    res.idle = res.gap - explained - res.exit; // cash on the sidelines, debt paid early, timing, everything else
     res.costs = { fees: s.tot.fees, tax: s.tot.tax, cardInt: s.tot.cardInt, dollyTax: dolly.s.tot.tax, dollyFees: dolly.s.tot.fees };
     var cw = s.hist.cashW, sum = 0; for (var i = 0; i < cw.length; i++) sum += cw[i];
     res.avgCash = cw.length ? sum / cw.length : 0;
@@ -3051,10 +3262,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     if (res.ratio >= 1.02) L2.push({ k: 'good', h: 'You beat the index', b: 'You finished ' + pct(res.ratio - 1) + ' ahead of Dolly. Most professionals fail to do that over ' + Math.round(years) + ' years. Whether it was skill or luck takes more than one run to tell, so try the same approach on a new market.' });
     else if (res.ratio >= 0.98) L2.push({ k: 'ok', h: 'You matched the index', b: 'A tie with Dolly is a good result. She did nothing but buy the whole market every month, and that beats most people who try harder.' });
     else L2.push({ k: 'bad', h: 'The index won', b: 'Dolly finished ' + pct(1 / Math.max(res.ratio, 0.01) - 1) + ' ahead of you by buying the ' + tape.dest.indexName + ' fund every month and never selling. This is the normal result, for amateurs and professionals alike.' });
-    if (res.avgCash > 0.25 && res.idle < 0) L2.push({ k: 'bad', h: 'Too much sat in cash', b: 'On average ' + pct(res.avgCash) + ' of your money was in cash. The market returned about ' + (res.idxCagr * 100).toFixed(1) + '% a year over this run. Cash earned far less, and waiting for the perfect moment cost you roughly ' + f(-res.idle, { auto: true }) + '.' });
+    if (res.avgCash > 0.25 && res.idle < 0) L2.push({ k: 'bad', h: 'Too much sat in cash', b: 'On average ' + pct(res.avgCash) + ' of your money was in cash. The market returned about ' + (res.idxCagr * 100).toFixed(1) + '% a year over this run. Cash earned far less, and waiting for the perfect moment cost you roughly ' + f(res.gap < 0 ? Math.min(-res.idle, -res.gap) : -res.idle, { auto: true }) + '.' });
     if (stock && stock.alpha < -0.03 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: 'Your stock picks trailed the market', b: 'The money you put into individual companies would be worth ' + f(-stock.alpha, { auto: true }) + ' more in the index fund. Most single stocks lose to the index, because a few big winners drive most of its gains and they are hard to pick in advance.' });
     if (stock && stock.alpha > 0.03 * Math.max(res.nw, 1)) L2.push({ k: 'good', h: 'Your stock picks beat the market', b: 'Your individual companies are worth ' + f(stock.alpha, { auto: true }) + ' more than the same money in the index fund.' });
-    if (s.tot.tax > 2.5 * dolly.s.tot.tax && s.tot.tax > 0.02 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: 'Trading ran up a tax bill', b: 'You paid ' + f(s.tot.tax, { auto: true }) + ' in tax. Dolly paid ' + f(dolly.s.tot.tax, { auto: true }) + '. Every time you sell at a profit, part of it leaves for good and stops compounding. Selling within a year is taxed at 22% instead of 15%.' });
+    var gainTax = s.tot.taxGain || 0;
+    if (gainTax > 0.02 * Math.max(res.nw, 1) && gainTax > 2.5 * (dolly.s.tot.taxGain || 0)) L2.push({ k: 'bad', h: 'Selling ran up a tax bill', b: 'You paid ' + f(gainTax, { auto: true }) + ' in tax on profits you took along the way. Dolly never sold, so that money stayed invested for her. Every time you sell at a profit, part of it leaves for good and stops compounding. Selling within a year is taxed at 22% instead of 15%.' });
     if (s.st.panicSells > 0 && res.sells.regret > 0) L2.push({ k: 'bad', h: 'You sold when it was scary', b: 'You sold stocks ' + s.st.panicSells + ' time' + (s.st.panicSells > 1 ? 's' : '') + ' while the market was down more than 15%. ' + res.sells.regret + ' of your sales were later up more than 25% from where you let go. Selling low locks the loss in.' });
     if (s.st.chase >= 3) L2.push({ k: 'bad', h: 'You chased what was already hot', b: s.st.chase + ' times you bought a stock right after it had jumped more than 18% in a month. By then the good news is usually in the price.' });
     if (s.st.maxW > 0.4) L2.push({ k: 'ok', h: 'A lot rode on one company', b: 'At one point a single stock was ' + pct(s.st.maxW) + ' of everything you had. That can make you rich or wipe you out. The index spreads the same bet across ' + tape.dest.companies.length + ' companies.' });
@@ -3063,7 +3275,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     if (cats.business && Math.abs(cats.business.alpha) > 0.03 * Math.max(res.nw, 1)) L2.push({ k: cats.business.alpha > 0 ? 'good' : 'bad', h: cats.business.alpha > 0 ? 'Your businesses earned their keep' : 'Your businesses lagged', b: 'They ended ' + f(Math.abs(cats.business.alpha), { auto: true }) + (cats.business.alpha > 0 ? ' ahead of' : ' behind') + ' the index. A small business can out-earn the market, but all of it rides on one location and one economy.' });
     if (cats.casino && s.tot.casinoBet > 0) L2.push({ k: 'bad', h: 'The casino took its cut', b: 'You bet ' + f(s.tot.casinoBet, { auto: true }) + ' in total. The odds said you would lose about ' + f(Math.round(s.tot.casinoEV), { auto: true }) + '. You actually ' + (s.tot.casinoWon >= s.tot.casinoBet ? 'won ' : 'lost ') + f(Math.abs(s.tot.casinoWon - s.tot.casinoBet), { auto: true }) + '. Play long enough and the two numbers meet.' });
     if (cats.crypto && cats.crypto.alpha < -0.02 * Math.max(res.nw, 1)) L2.push({ k: 'bad', h: tape.dest.crypto.name + ' fleeced you', b: 'It ended ' + f(-cats.crypto.alpha, { auto: true }) + ' behind the index. With nothing underneath the price, you were betting on other buyers showing up.' });
-    if (res.trades <= 5 && res.ratio > 0.95 && years >= 5) L2.push({ k: 'good', h: 'You barely touched it', b: 'Only ' + res.trades + ' trades all run. Doing little is underrated: no fees, almost no tax, and nothing to panic about.' });
+    if (res.trades <= 5 && res.ratio > 0.95 && years >= 5) L2.push({ k: 'good', h: 'You barely touched it', b: (res.trades === 0 ? 'No trades' : res.trades === 1 ? 'Only 1 trade' : 'Only ' + res.trades + ' trades') + ' all run. Doing little is underrated: no fees, almost no tax, and nothing to panic about.' });
     res.lessons = L2.slice(0, 5);
     return res;
   };
@@ -3120,12 +3332,50 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return el;
   };
   U.clear = function (el) { while (el.firstChild) el.removeChild(el.firstChild); return el; };
+  // Every tappable thing goes through here, which is where stray taps are filtered out.
+  // "The same control" means the same label in the same style, because many screens redraw their buttons after every tap.
+  //  1. A second tap on one control within a few hundredths of a second is one finger bouncing, not two decisions.
+  //     If the control was redrawn in between (Hit, after a card arrives), the gap has to be a quarter of a second.
+  //  2. A control that was not on screen when you last tapped ignores taps for a moment, so "Deal" never turns into
+  //     "Deal, Hit" and opening a panel never also presses something inside it. Controls that were already there
+  //     (the next card to hold, Stand after Hit) are never held up. Hammering keeps the hold going until you pause.
+  //  3. Nothing inside a panel that is sliding shut can be pressed, and for a moment after it shuts neither can
+  //     whatever was underneath it, so extra taps on a confirm button do not land on the screen behind.
+  var lastTap = { t: -1e9, sig: '', el: null, seen: null }, quietUntil = 0;
+  function nowMs() { return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(); }
+  function sigOf(el) { return (el.getAttribute('aria-label') || el.textContent || '').slice(0, 48) + '|' + String(el.className).split(' ')[0]; }
+  function onScreen() { // labels of every control you could have tapped just now
+    var set = {}, all = document.querySelectorAll('button, [role=button]'), i;
+    for (i = 0; i < all.length; i++) if (all[i].offsetParent !== null) set[sigOf(all[i])] = 1;
+    return set;
+  }
+  U.tapGuardMs = 300;
   U.tap = function (el, fn) {
+    el._born = nowMs();
     el.addEventListener('click', function (e) {
       if (el.disabled) return;
+      var t = nowMs(), sig = sigOf(el), gap = t - lastTap.t;
+      if (sig === lastTap.sig && gap < (el === lastTap.el ? 70 : 250)) return;
+      if (gap < U.tapGuardMs && el._born >= lastTap.t0 && lastTap.seen && !lastTap.seen[sig]) { lastTap.t = t; return; }
+      if (t < quietUntil || (el.closest && el.closest('.closing'))) return;
+      lastTap = { t: t, t0: t, sig: sig, el: el, seen: onScreen() };
       if (BW.Audio) BW.Audio.unlock();
       fn(e);
     });
+  };
+  // "12.50", "1,250", "12,50" (decimal comma) and "$3 000" all mean what a person would expect. Anything odd is zero.
+  U.parseMoney = function (str) {
+    var t = String(str == null ? '' : str).trim().replace(/[\s$€£]/g, '');
+    if (!t || /[-+eE]/.test(t)) return 0;
+    if (t.indexOf(',') >= 0) {
+      if (t.indexOf('.') >= 0 && t.lastIndexOf(',') > t.lastIndexOf('.')) t = t.replace(/\./g, '').replace(',', '.'); // 1.250,50
+      else if (t.indexOf('.') >= 0 || /^\d{1,3}(,\d{3})+$/.test(t)) t = t.replace(/,/g, '');
+      else if (/^\d+,\d{1,2}$/.test(t)) t = t.replace(',', '.');
+      else t = t.replace(/,/g, '');
+    }
+    if (!/^\d*\.?\d*$/.test(t)) return 0;
+    var v = Math.round(parseFloat(t) * 100);
+    return v > 0 && isFinite(v) ? Math.min(v, 1e14) : 0;
   };
 
   /* ---------- live bindings ---------- */
@@ -3160,15 +3410,17 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   F.ms = function (c) { return Math.abs(c) >= 1e9 ? BW.fmtMoney(c, { short: true }) : BW.fmtMoney(c, { whole: true }); }; // short once it gets silly
   F.mp = function (c) { return BW.fmtMoney(c, { whole: Math.abs(c) >= 100000, plus: c > 0 }); };
   F.px = function (c) { return BW.fmtMoney(c); };
-  F.pct = function (x, dp, plus) { if (x == null || !isFinite(x)) return 'n/a'; return (plus && x > 0 ? '+' : '') + (x * 100).toFixed(dp == null ? 1 : dp) + '%'; };
+  F.pct = function (x, dp, plus) { if (x == null || !isFinite(x)) return 'n/a'; var t = (x * 100).toFixed(dp == null ? 1 : dp); if (parseFloat(t) === 0) return (0).toFixed(dp == null ? 1 : dp) + '%'; return (plus && x > 0 ? '+' : '') + t + '%'; };
+  F.signPct = function (x, dp) { return x == null || !isFinite(x) || parseFloat((x * 100).toFixed(dp == null ? 1 : dp)) === 0 ? '' : x > 0 ? 'up' : 'down'; }; // colour for a percentage, with none for one that rounds to zero
   F.pp = function (x, dp) { return F.pct(x, dp, true); };
   F.num = function (x, dp) { if (x == null || !isFinite(x)) return 'n/a'; return x.toFixed(dp == null ? 1 : dp); };
   F.big = function (m) { // $ millions to words
     var a = Math.abs(m); return (m < 0 ? '-' : '') + '$' + (a >= 1000 ? (a / 1000).toFixed(a >= 10000 ? 0 : 1) + 'B' : a >= 10 ? Math.round(a) + 'M' : a.toFixed(1) + 'M');
   };
   F.qty = function (q) { return q >= 1000 ? Math.round(q).toLocaleString('en-US') : q >= 10 ? q.toFixed(2) : q.toFixed(4); };
-  F.date = function (rel) { var p = BW.dateParts(rel); return p.mname + ' Y' + p.year; };
-  F.dateLong = function (rel) { var p = BW.dateParts(rel); return p.mname + ' ' + p.day + ', Year ' + p.year; };
+  // Days before the run started are counted backwards in plain words rather than as "Year 0" or "Year -1".
+  F.date = function (rel) { var p = BW.dateParts(rel), k = 1 - p.year; return rel < 0 ? p.mname + ', ' + (k === 1 ? 'year before' : k + ' yrs before') : p.mname + ' Y' + p.year; };
+  F.dateLong = function (rel) { var p = BW.dateParts(rel), k = 1 - p.year; return rel < 0 ? p.mname + ' ' + p.day + ', ' + (k === 1 ? 'the year before you started' : k + ' years before you started') : p.mname + ' ' + p.day + ', Year ' + p.year; };
   F.ago = function (days) { if (days <= 0) return 'today'; if (days < 5) return days + 'd ago'; if (days < 20) return Math.round(days / 5) + 'w ago'; if (days < 240) return Math.round(days / 20) + 'mo ago'; return (days / 240).toFixed(1) + 'y ago'; };
   F.sign = function (x) { return x > 0 ? 'up' : x < 0 ? 'down' : ''; };
 
@@ -3204,6 +3456,17 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   var stack = [];
   U.sheetCount = function () { return stack.length; };
   // opts: { title, full, build(body, ctl), foot(el, ctl), onClose }
+  // The phone's Back button (or back swipe) closes the panel on top instead of leaving the game.
+  // Each open panel has one spare step in the browser's history for Back to use up. The game never moves through
+  // history itself, so it can never navigate away by accident. The only cost: after closing panels by hand, the
+  // same number of Back presses do nothing before the next one leaves.
+  var guards = 0;
+  try { if (window.history.state && window.history.state.bwPanel) guards = 1; } catch (e) { /* no history here */ } // reloaded while sitting on a spare step: reuse it
+  function histGuard() { while (guards < stack.length) { try { window.history.pushState({ bwPanel: 1 }, ''); guards++; } catch (e) { return; } } }
+  if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('popstate', function () {
+    guards = Math.max(0, guards - 1);
+    if (stack.length) stack[stack.length - 1].close();
+  });
   U.sheet = function (opts) {
     var host = document.getElementById('sheets');
     var scope = U.newScope();
@@ -3217,11 +3480,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     ctl.el = el;
     if (opts.foot) { var foot = U.h('div', { cls: 'sh-foot' }); opts.foot(foot, ctl); el.appendChild(foot); }
     ctl.close = function (silent) {
-      if (ctl.closed) return; ctl.closed = true;
+      if (ctl.closed) return; ctl.closed = true; quietUntil = nowMs() + 280;
       var i = stack.indexOf(ctl); if (i >= 0) stack.splice(i, 1);
       U.dropScope(scope);
       if (U.cur === scope) U.cur = stack.length ? stack[stack.length - 1].scope : U.baseScope || scopes[0];
-      el.classList.remove('in'); scrim.classList.remove('in');
+      el.classList.remove('in'); scrim.classList.remove('in'); el.classList.add('closing'); scrim.classList.add('closing');
       setTimeout(function () { if (el.parentNode) host.removeChild(el); if (scrim.parentNode) host.removeChild(scrim); }, 260);
       if (opts.onClose) opts.onClose();
       if (!silent && BW.Audio) BW.Audio.play('close');
@@ -3229,7 +3492,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     U.tap(scrim, function () { ctl.close(); });
     host.appendChild(scrim); host.appendChild(el);
     opts.build(body, ctl);
-    stack.push(ctl);
+    stack.push(ctl); histGuard();
     U.cur = scope; // while this sheet is on top, new bindings attach to it
     requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('in'); scrim.classList.add('in'); }); });
     if (BW.Audio) BW.Audio.play('open');
@@ -3260,11 +3523,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   U.toast = function (text, o) {
     o = o || {};
     var host = document.getElementById('toasts');
-    while (host.children.length >= 3) host.removeChild(host.firstChild);
-    var t = U.h('button', { cls: 'toast ' + (o.kind || '') }, U.h('span', { cls: 'grow' }, text, o.sub ? U.h('small', { text: o.sub }) : null));
+    while (host.children.length >= 2) host.removeChild(host.firstChild);
+    // only a toast that does something when tapped is allowed to catch taps; the rest let them through to what is underneath
+    var t = U.h(o.onTap ? 'button' : 'div', { cls: 'toast ' + (o.kind || '') + (o.onTap ? ' act' : ''), role: o.onTap ? null : 'status' }, U.h('span', { cls: 'grow' }, text, o.sub ? U.h('small', { text: o.sub }) : null));
     var gone = false;
     function out() { if (gone) return; gone = true; t.classList.add('out'); setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260); }
-    U.tap(t, function () { out(); if (o.onTap) o.onTap(); });
+    if (o.onTap) U.tap(t, function () { out(); o.onTap(); });
     host.appendChild(t);
     setTimeout(out, o.ms || 3200);
     return t;
@@ -3299,13 +3563,27 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       U.h('span', { cls: 'grow' }, U.h('div', { cls: 't1', text: label }), sub ? U.h('div', { cls: 't2', style: 'white-space:normal', text: sub }) : null), sw);
   };
   var LOGO_SHAPES = ['', 'round', 'cut', 'leaf'];
+  // Two letters for each sector that no other sector in the same world shares.
+  var secCodes = {};
+  function secCode(tape, id) {
+    var key = tape.dest.id, map = secCodes[key];
+    if (!map) {
+      map = secCodes[key] = {}; var used = {};
+      tape.sectors.forEach(function (sx) {
+        var nm = sx.name.replace(/[^A-Za-z]/g, ''), c = '', k;
+        for (k = 1; k < nm.length; k++) { c = nm.charAt(0).toUpperCase() + nm.charAt(k).toLowerCase(); if (!used[c]) break; }
+        used[c] = 1; map[sx.id] = c;
+      });
+    }
+    return map[id] || '?';
+  }
   U.logo = function (a, size) {
     var tape = BW.G && BW.G.tape, hue = 210, shape = '', txt = a.tkr.slice(0, 2), sat = 48, lum = 36;
     if (a.kind === 'stock') {
       var s = tape.sectors.filter(function (x) { return x.id === a.sector; })[0];
       var k = BW.hashStr(a.id); hue = (s ? s.hue : 200) + (k % 31) - 15; shape = LOGO_SHAPES[k % 4];
     } else if (a.kind === 'fund') { hue = 44; sat = 70; lum = 38; shape = 'round'; txt = a.tkr.slice(0, 1); }
-    else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; }
+    else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; txt = secCode(tape, a.sector); }
     else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.slice(1, 3); }
     else if (a.kind === 'cmdty') { hue = { gold: 45, oil: 20, copper: 18, wheat: 52 }[a.id] || 30; sat = a.id === 'oil' ? 12 : 62; lum = a.id === 'oil' ? 22 : 40; shape = 'leaf'; var w = a.name.split(' '); txt = w.length > 1 ? w[0].charAt(0) + w[1].charAt(0) : a.name.slice(0, 2); }
     else if (a.kind === 'crypto') { hue = 285; sat = 60; lum = 48; shape = 'round'; txt = a.tkr.slice(0, 1); }
@@ -3529,6 +3807,22 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   function commas(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function fmtAxis(v) { var a = Math.abs(v); return a >= 1e9 ? trimZ((v / 1e9).toFixed(2)) + 'B' : a >= 1e6 ? trimZ((v / 1e6).toFixed(a >= 1e7 ? 1 : 2)) + 'M' : a >= 1e4 ? trimZ((v / 1e3).toFixed(a >= 1e5 ? 1 : 2)) + 'k' : a >= 1000 ? (v < 0 ? '-' : '') + commas(Math.round(a)) : a >= 100 ? Math.round(v).toString() : a >= 10 ? v.toFixed(1) : v.toFixed(2); }
   C.fmtAxis = fmtAxis;
+  // One unit and one number of decimals for a whole axis, chosen from its largest value and the gap between gridlines,
+  // so labels read 8k, 10k, 12k and never a mix like 8,000 and 10k.
+  function axisFmt(maxAbs, step, usd) {
+    var unit = maxAbs >= 1e9 ? [1e9, 'B'] : maxAbs >= 1e6 ? [1e6, 'M'] : maxAbs >= 1e4 ? [1e3, 'k'] : [1, ''];
+    var st = step / unit[0], dp = st >= 0.999 ? 0 : st >= 0.0999 ? 1 : st >= 0.00999 ? 2 : 3;
+    if (!unit[1] && maxAbs < 100 && dp < 1 && !usd) dp = 1;
+    return function (v) {
+      var a = Math.abs(v) / unit[0], t = a.toFixed(dp);
+      if (parseFloat(t) === 0) return usd ? '$0' : '0';
+      if (!unit[1] && a >= 1000) { var pr = t.split('.'); t = commas(pr[0]) + (pr[1] ? '.' + pr[1] : ''); }
+      return (v < 0 ? '-' : '') + (usd ? '$' : '') + t + unit[1];
+    };
+  }
+  C.axisFmt = axisFmt;
+  // keep a centred label inside the drawing area instead of letting the edge cut it in half
+  function textIn(g, txt, x, y, lo, hi) { var hw = g.measureText(txt).width / 2; g.fillText(txt, Math.max(lo + hw, Math.min(hi - hw, x)), y); }
   C.fmtUsd = function (v) { return Math.abs(v) < 0.005 ? '$0' : (v < 0 ? '-$' : '$') + fmtAxis(Math.abs(v)); };
   function bucketFor(range) { var b = range / 56; return b <= 1.2 ? 1 : b <= 6 ? 5 : b <= 24 ? 20 : b <= 70 ? 60 : b <= 140 ? 120 : 240; }
   function xLabel(rel, bucket, span) { var p = BW.dateParts(rel); if (rel < 0 && (bucket >= 20 || span > 300)) return Math.ceil(-rel / 240) + 'y before'; return bucket >= 60 || span > 700 ? 'Y' + p.year : bucket >= 5 ? p.mname + (span > 200 ? ' Y' + p.year : '') : p.mname + ' ' + p.day; }
@@ -3567,9 +3861,15 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       var data = build(), bars = data.bars, n = bars.length;
       if (!n) return;
       var padR = 50, padL = 14, padT = o.mode === 'candle' && w < 520 ? 42 : 22, volH = o.vol ? 34 : 0, padB = 32 + volH;
-      var pw = w - padL - padR, ph = H - padT - padB;
       var lo = 1e15, hi = -1, i, k;
       for (i = 0; i < n; i++) { if (bars[i].l < lo) lo = bars[i].l; if (bars[i].h > hi) hi = bars[i].h; }
+      // the widest price label decides how much room the right-hand gutter needs
+      g.font = '700 11px ' + css('--fT');
+      // (when the range is wide the chart uses a log scale with gridlines at 1, 2, 5, 10..., so the smallest gridline sets the decimals)
+      var wide = hi / Math.max(lo, 1) > 3.5;
+      var afP = axisFmt(hi / 100, wide ? Math.pow(10, Math.floor(Math.log10(Math.max(lo, 1) / 100))) : Math.max(0.01, niceStep((hi - lo) / 100 || 1, 4)));
+      padR = Math.max(50, Math.ceil(Math.max(g.measureText(afP(hi / 100)).width, g.measureText(afP(lo / 100)).width)) + 22);
+      var pw = w - padL - padR, ph = H - padT - padB;
       var line = o.mode === 'line';
       if (line) { lo = 1e15; hi = -1; for (i = 0; i < n; i++) { if (bars[i].c < lo) lo = bars[i].c; if (bars[i].c > hi) hi = bars[i].c; } }
       if (o.cost && o.cost > lo * 0.6 && o.cost < hi * 1.6) { lo = Math.min(lo, o.cost); hi = Math.max(hi, o.cost); }
@@ -3587,11 +3887,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       var ticks = [];
       if (log) { var steps = [1, 2, 5], e10 = Math.pow(10, Math.floor(Math.log10(lo))); for (k = 0; k < 12; k++) { var tv = steps[k % 3] * e10 * Math.pow(10, Math.floor(k / 3)); if (tv >= lo * 0.98 && tv <= hi * 1.02) ticks.push(tv); } if (ticks.length < 2) ticks = [lo, hi]; }
       else { var stp = niceStep(hi - lo || 1, 4); for (var tv2 = Math.ceil(lo / stp) * stp; tv2 <= hi; tv2 += stp) ticks.push(tv2); }
-      ticks.forEach(function (tv3) { var yy = Math.round(Y(tv3)) + 0.5; g.globalAlpha = 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; g.fillText(fmtAxis(tv3 / 100), w - padR + 8, yy); });
+      var yPill = Y(bars[n - 1].c); // the latest-price label sits here, so a gridline label this close would be hidden behind it
+      ticks.forEach(function (tv3) { var yy = Math.round(Y(tv3)) + 0.5; g.globalAlpha = 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; if (Math.abs(yy - yPill) >= 13) g.fillText(afP(tv3 / 100), w - padR + 8, yy); });
       // date labels
       g.textAlign = 'center';
       var every = Math.max(1, Math.round(n / (data.d1 - bars[0].d0 > 200 && data.d1 - bars[0].d0 <= 700 ? 3 : 4)));
-      for (i = Math.floor(every / 2); i < n; i += every) g.fillText(xLabel(bars[i].d0 - o.day0, data.b, data.d1 - bars[0].d0), X(i), H - volH - 9);
+      for (i = Math.floor(every / 2); i < n; i += every) textIn(g, xLabel(bars[i].d0 - o.day0, data.b, data.d1 - bars[0].d0), X(i), H - volH - 9, 2, w - padR);
       // volume
       if (o.vol) { var vmax = 0.001; for (i = 0; i < n; i++) vmax = Math.max(vmax, bars[i].v); g.globalAlpha = 0.5;
         for (i = 0; i < n; i++) { var vh = Math.max(1, bars[i].v / vmax * (volH - 6)); g.fillStyle = bars[i].c >= bars[i].o ? up : dn; g.fillRect(X(i) - slot * 0.32, H - vh - 2, Math.max(1, slot * 0.64), vh); } g.globalAlpha = 1; }
@@ -3623,7 +3924,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       if (o.cost) { var yc = Math.round(Y(o.cost)) + 0.5; if (yc > padT && yc < padT + ph) { g.strokeStyle = brass; g.setLineDash([2, 4]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(padL, yc); g.lineTo(w - padR, yc); g.stroke(); g.setLineDash([]); g.fillStyle = brass; g.textAlign = 'left'; g.fillText('you paid', padL + 2, yc - 8); } }
       // last price marker
       var last = bars[n - 1].c, yl = Y(last);
-      g.fillStyle = bars[n - 1].c >= bars[0].o ? up : dn; var lbl = fmtAxis(last / 100); g.textAlign = 'left';
+      g.fillStyle = bars[n - 1].c >= bars[0].o ? up : dn; var lbl = afP(last / 100); g.textAlign = 'left';
       var tw = g.measureText(lbl).width + 10; roundRect(g, w - padR + 4, yl - 9, tw, 18, 4); g.fill();
       g.fillStyle = css('--bg'); g.font = '700 11px ' + css('--fT'); g.fillText(lbl, w - padR + 9, yl + 0.5); g.font = '11px ' + css('--fT');
       // news pins
@@ -3696,19 +3997,23 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       if (n < 2) { g.fillStyle = css('--ink3'); g.font = '13px ' + css('--fT'); g.textAlign = 'center'; g.fillText(o.emptyText || 'The line appears as time passes.', w / 2, H / 2); return; }
       var i0 = o.from ? Math.max(0, o.from()) : 0, m = n - i0;
       if (m < 2) { i0 = Math.max(0, n - 2); m = n - i0; }
-      var padL = 14, padR = 50, padT = 22, padB = 20, pw = w - padL - padR, ph = H - padT - padB;
+      var padL = 14, padR = 50, padT = 22, padB = 20, pw, ph = H - padT - padB;
       var lo = 1e18, hi = -1e18, i, s, step = Math.max(1, Math.floor(m / 240));
       for (s = 0; s < o.series.length; s++) for (i = i0; i < n; i += step) { var v = o.series[s].get(i); if (v == null) continue; if (v < lo) lo = v; if (v > hi) hi = v; }
       for (s = 0; s < o.series.length; s++) { var vl = o.series[s].get(n - 1); if (vl != null) { if (vl < lo) lo = vl; if (vl > hi) hi = vl; } }
       if (o.zero) { if (lo > 0) lo = 0; if (hi < 0) hi = 0; }
       if (hi === lo) { hi += 1; lo -= 1; }
       var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
-      var Y = function (v2) { return padT + ph * (1 - (v2 - lo) / (hi - lo)); }, X = function (i2) { return padL + pw * (i2 - i0) / (m - 1); };
       g.font = '11px ' + css('--fT'); g.textBaseline = 'middle'; g.strokeStyle = css('--line'); g.fillStyle = css('--ink3'); g.lineWidth = 1; g.textAlign = 'left';
       var stp = niceStep(hi - lo, 4);
-      for (var tv = Math.ceil(lo / stp) * stp; tv <= hi; tv += stp) { var yy = Math.round(Y(tv)) + 0.5; g.globalAlpha = tv === 0 ? 1 : 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; g.fillText(o.fmt ? o.fmt(tv) : fmtAxis(tv), w - padR + 8, yy); }
+      var lab = o.fmt === C.fmtUsd ? axisFmt(Math.max(Math.abs(lo), Math.abs(hi)), stp, true) : o.fmt || fmtAxis, tv0;
+      for (tv0 = Math.ceil(lo / stp) * stp; tv0 <= hi; tv0 += stp) padR = Math.max(padR, Math.ceil(g.measureText(lab(tv0)).width) + 14);
+      pw = w - padL - padR;
+      var Y = function (v2) { return padT + ph * (1 - (v2 - lo) / (hi - lo)); }, X = function (i2) { return padL + pw * (i2 - i0) / (m - 1); };
+      for (var tv = Math.ceil(lo / stp) * stp; tv <= hi; tv += stp) { var yy = Math.round(Y(tv)) + 0.5; g.globalAlpha = tv === 0 ? 1 : 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; g.fillText(lab(tv), w - padR + 8, yy); }
       g.textAlign = 'center';
-      for (i = 0; i < 4; i++) { var ix = i0 + Math.round((m - 1) * (i + 0.5) / 4); g.fillText(o.x(ix), X(ix), H - 8); }
+      var seenX = {};
+      for (i = 0; i < 4; i++) { var ix = i0 + Math.round((m - 1) * (i + 0.5) / 4), xl = o.x(ix); if (seenX[xl]) continue; seenX[xl] = 1; textIn(g, xl, X(ix), H - 8, 2, w - padR); }
       for (s = 0; s < o.series.length; s++) {
         var se = o.series[s], col = css(se.color); g.beginPath(); var st2 = false;
         for (i = i0; i < n; i += step) { var v3 = se.get(i); if (v3 == null) continue; if (st2) g.lineTo(X(i), Y(v3)); else { g.moveTo(X(i), Y(v3)); st2 = true; } }
@@ -3802,19 +4107,65 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     return lsSet(JSON.stringify(data));
   };
   App.saveSoon = function () { ui.needSave = true; };
+  // Saved data can be old, half-written, or edited by hand. Anything that is not the shape the game expects is
+  // replaced with a fresh default, piece by piece, so one bad field never costs the whole profile.
+  function kind(x) { return Array.isArray(x) ? 'array' : x === null ? 'null' : typeof x; }
+  function fin(x) { return typeof x === 'number' && isFinite(x); }
+  function repair(m, fresh) {
+    if (kind(m) !== 'object') return fresh;
+    var k, j;
+    for (k in fresh) if (kind(m[k]) !== kind(fresh[k]) || (typeof fresh[k] === 'number' && !fin(m[k]))) m[k] = fresh[k];
+    ['set', 'cos', 'stats'].forEach(function (g) { for (j in fresh[g]) if (kind(m[g][j]) !== kind(fresh[g][j]) || (typeof fresh[g][j] === 'number' && !fin(m[g][j]))) m[g][j] = fresh[g][j]; });
+    for (k in fresh.cos.owned) m.cos.owned[k] = 1;
+    [['theme', 'th_floor'], ['bell', 'bl_brass'], ['candle', 'cd_classic'], ['title', 'tt_rookie']].forEach(function (c) { if (!BW.COS_BY[m.cos[c[0]]]) m.cos[c[0]] = c[1]; });
+    m.bells = Math.max(0, Math.round(m.bells)); m.bellsEarned = Math.max(0, Math.round(m.bellsEarned));
+    m.name = BW.cleanName(m.name);
+    m.boxes = m.boxes.filter(function (b) { return b && BW.BOX_TIERS[b.tier]; }).map(function (b) { return { tier: b.tier }; });
+    m.runs = m.runs.filter(function (r) { return kind(r) === 'object' && BW.SCEN_BY[r.scen] && fin(r.score) && fin(r.dolly) && fin(r.ratio); });
+    for (k in m.best) if (!fin(m.best[k])) delete m.best[k];
+    var fr = {};
+    Object.keys(m.friends).forEach(function (code) {
+      if (!BW.parseCode(code).ok || !Array.isArray(m.friends[code])) return;
+      fr[code] = m.friends[code].filter(function (x) { return kind(x) === 'object' && fin(x.score) && fin(x.dolly); }).map(function (x) { return { name: BW.cleanName(x.name) || 'Anon', score: x.score, dolly: x.dolly, attempt: fin(x.attempt) ? x.attempt : 1, bankrupt: !!x.bankrupt, me: !!x.me }; });
+    });
+    m.friends = fr;
+    return m;
+  }
+  // Is this saved run something the engine can safely carry on with?
+  function soundRun(s, tape) {
+    if (kind(s) !== 'object') return false;
+    var whole = function (x) { return fin(x) && Math.round(x) === x; };
+    if (!whole(s.d) || s.d < tape.W || s.d > tape.N - 1 || s.day0 !== tape.W || !whole(s.endD) || !whole(s.cash)) return false;
+    if (kind(s.pos) !== 'object' || kind(s.flow) !== 'object' || kind(s.tot) !== 'object' || kind(s.st) !== 'object' || kind(s.job) !== 'object' || kind(s.auto) !== 'object' || kind(s.tax) !== 'object' || kind(s.hist) !== 'object' || kind(s.pme) !== 'object' || kind(s.ps) !== 'object') return false;
+    if (!Array.isArray(s.cds) || !Array.isArray(s.props) || !Array.isArray(s.biz) || !Array.isArray(s.orders) || !Array.isArray(s.acts) || !Array.isArray(s.hist.nw) || !Array.isArray(s.hist.liq) || !Array.isArray(s.hist.cashW) || !Array.isArray(s.auto.alloc)) return false;
+    if (!fin(s.job.salary) || !fin(s.job.living) || !fin(s.tax.lossBank) || !fin(s.accr)) return false;
+    var k; for (k in s.tot) if (!fin(s.tot[k])) return false;
+    for (k in s.flow) if (!fin(s.flow[k])) return false;
+    for (k in s.pos) { var p = s.pos[k]; if (!tape.assets[k] || kind(p) !== 'object' || !fin(p.q) || !(p.q > 0) || !Array.isArray(p.lots) || !p.lots.length) return false;
+      if (!p.lots.every(function (l) { return Array.isArray(l) && fin(l[0]) && whole(l[1]) && whole(l[2]); })) return false; }
+    // the lists: every entry has to be something the engine could have written itself
+    var obj = function (x) { return kind(x) === 'object'; }, pos0 = function (x) { return fin(x) && x >= 0; };
+    if (typeof s.done !== 'boolean' || (!s.done && s.d >= s.endD) || s.endD > tape.N - 1) return false;
+    if (!s.cds.every(function (c) { return obj(c) && whole(c.p) && c.p > 0 && fin(c.rate) && (c.term === 1 || c.term === 3 || c.term === 5) && whole(c.d0) && whole(c.d1) && c.d1 > c.d0 && whole(c.int); })) return false;
+    if (!s.props.every(function (x) { return obj(x) && typeof x.id === 'string' && typeof x.addr === 'string' && fin(x.cond) && pos0(x.full0) && whole(x.d0) && whole(x.buyD) && whole(x.price) && whole(x.basis) && fin(x.rent0) && whole(x.reno) && whole(x.vacant) && whole(x.lease) && fin(x.units) && fin(x.sellDays)
+      && (x.loan === null || (obj(x.loan) && whole(x.loan.bal) && fin(x.loan.rate) && whole(x.loan.pay) && whole(x.loan.orig))) && (x.sale === null || (obj(x.sale) && whole(x.sale.d) && fin(x.sale.f))); })) return false;
+    if (!s.biz.every(function (x) { return obj(x) && BW.BIZ_BY[x.type] && whole(x.lvl) && x.lvl >= 1 && x.lvl <= 10 && whole(x.buyD) && whole(x.invested) && fin(x.net) && Array.isArray(x.ttm) && x.ttm.every(fin); })) return false;
+    if (!s.orders.every(function (o) { return obj(o) && tape.assets[o.id] && (o.side === 'buy' || o.side === 'sell') && (o.kind === 'limit' || o.kind === 'stop') && whole(o.px) && pos0(o.amt) && pos0(o.frac); })) return false;
+    if (!s.auto.alloc.every(function (a) { return obj(a) && tape.assets[a.id] && pos0(a.pct); }) || !pos0(s.auto.keep)) return false;
+    if (!(s.loan === null || (obj(s.loan) && whole(s.loan.bal) && fin(s.loan.rate) && whole(s.loan.pay)))) return false;
+    if (!pos0(s.job.outUntil) || !fin(s.feeMult) || !fin(s.taxMult) || !fin(s.renoMult) || !fin(s.agentMult) || !fin(s.selfSlots) || !fin(s.salaryMult) || !whole(s.startCash)) return false;
+    if (![s.hist.nw, s.hist.liq, s.hist.cashW].every(function (arr) { return arr.every(fin); })) return false;
+    for (k in s.st) if (typeof s.st[k] === 'number' && !fin(s.st[k])) return false;
+    if (!Array.isArray(s.st.sellLog) || !Array.isArray(s.st.buyLog) || !Array.isArray(s.watch) || !obj(s.offers)) return false;
+    return true;
+  }
   function load() {
     var raw = lsGet(), data = null;
     if (raw) { try { data = JSON.parse(raw); } catch (e) { data = null; } }
+    if (kind(data) !== 'object') data = null;
     var fresh = BW.newMeta();
-    if (data && data.meta) { // fill in anything added since the save was made
-      var m = data.meta, k;
-      for (k in fresh) if (m[k] == null) m[k] = fresh[k];
-      for (k in fresh.set) if (m.set[k] == null) m.set[k] = fresh.set[k];
-      for (k in fresh.cos.owned) m.cos.owned[k] = 1;
-      for (k in fresh.stats) if (m.stats[k] == null) m.stats[k] = fresh.stats[k];
-      G.meta = m;
-    } else G.meta = fresh;
-    return data && data.run ? data.run : null;
+    try { G.meta = data && data.meta ? repair(data.meta, fresh) : fresh; } catch (e) { console.error(e); G.meta = BW.newMeta(); }
+    return data && kind(data.run) === 'object' && kind(data.run.cfg) === 'object' ? data.run : null;
   }
   App.wipe = function () { try { window.localStorage.removeItem(KEY); } catch (e) { /* ignore */ } };
 
@@ -3977,6 +4328,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
           U.toast(a.name + (e.why === 'bankrupt' ? ' went bankrupt' : ' was bought out'), { kind: e.why === 'bankrupt' ? 'bad' : 'good', sub: e.why === 'bankrupt' ? 'Your shares are worth nothing.' : 'You were paid ' + f.ma(e.net) + ' in cash.', ms: 6000 });
           BW.Audio.play(e.why === 'bankrupt' ? 'bad' : 'sell'); pauseWhy = pauseWhy || { h: a.name }; break;
         case 'fill': U.toast('Order filled: ' + (e.side === 'buy' ? 'bought ' : 'sold ') + tape.assets[e.id].tkr, { kind: 'brass', sub: 'At ' + f.px(e.px) }); BW.Audio.play(e.side === 'buy' ? 'buy' : 'sell'); break;
+        case 'orderfail': U.toast('Order cancelled: ' + tape.assets[e.id].tkr, { kind: 'bad', sub: e.why === 'cash' ? 'The price was reached, but you did not have the cash set aside for it.' : 'There was nothing left to sell.', ms: 5000 }); BW.Audio.play('error'); break;
         case 'jobloss': U.toast('You were laid off', { kind: 'bad', sub: 'No paycheck for about ' + e.months + ' months. Benefits cover part of it.', ms: 6000 }); BW.Audio.play('bad'); pauseWhy = pauseWhy || { h: 'job' }; break;
         case 'jobback': U.toast('You found a new job', { kind: 'good', sub: 'Paychecks resume.' }); BW.Audio.play('good'); break;
         case 'raise': if (e.promo) { U.toast('Promoted. Pay up ' + e.pct.toFixed(0) + '%', { kind: 'good', sub: 'New salary ' + f.m0(e.salary) + ' a year' }); BW.Audio.play('good'); } break;
@@ -4041,12 +4393,13 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       G.cfg = cfg; G.scen = scen;
       G.tape = BW.genTape({ seed: cfg.seed, years: scen.years, dest: cfg.dest, mods: scen.mods });
       var rc = { life: scen.life, perks: cfg.perks };
+      if (!soundRun(saved.s, G.tape)) { G.tape = null; G.cfg = null; G.scen = null; return false; }
       G.run = new BW.Run(G.tape, rc, saved.s);
       G.dolly = BW.dollySeries(G.tape, rc, saved.s.d);
       ui.speed = (saved.ui && saved.ui.speed) || 1; ui.newsSeen = T.newsCount(G.tape, G.run.s.d); ui.unread = (saved.ui && saved.ui.unread) || 0; ui.paused = true; ui.cache = { d: -1 };
       var k = ui.newsSeen - 1; while (k >= 0 && G.tape.news[k].sev < 2) k--; ui.tick = k >= 0 ? G.tape.news[k] : null;
       return true;
-    } catch (e) { console.error(e); G.run = null; return false; }
+    } catch (e) { console.error(e); G.run = null; G.tape = null; G.cfg = null; G.dolly = null; return false; }
   }
   App.abandon = function () { G.run = null; G.tape = null; G.dolly = null; G.cfg = null; App.save(); App.toHub(); };
 
@@ -4069,8 +4422,8 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       var idx = '12345'.indexOf(e.key); if (idx >= 0) { ui.speed = SPEEDS[idx][0]; ui.dirty = true; }
     });
     // a deep link like #BW1CE-K7QM2X opens that challenge
-    var hash = (location.hash || '').replace('#', '');
-    if (hash && BW.parseCode(hash).ok) setTimeout(function () { BW.Screens.challenge(hash); }, 300);
+    var hash = (location.hash || '').replace('#', ''), hp = hash ? BW.parseCode(hash) : null;
+    if (hp && hp.ok) setTimeout(function () { BW.Screens.challenge(hp.code); }, 300);
     ui.last = performance.now();
     requestAnimationFrame(frame);
     if (window.claude && window.claude.hot && window.claude.hot.snapshot) { try { window.claude.hot.snapshot(function () { App.save(); return {}; }); } catch (e) { /* not in a viewer */ } }
@@ -4150,7 +4503,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     // coming up
     el.appendChild(h('h3', { text: 'Coming up' }));
     var up = h('div', { cls: 'card' });
-    up.appendChild(U.kvLive('Next paycheck', function () { var left = 20 - (r.rel() % 20); return 'in ' + left + ' day' + (left > 1 ? 's' : ''); }));
+    up.appendChild(U.kvLive(s.job.salary > 0 ? 'Next paycheck' : 'Next month\'s bills', function () { var left = 20 - (r.rel() % 20); return 'in ' + left + ' day' + (left > 1 ? 's' : '') + (s.job.salary > 0 && s.job.outUntil ? ' (benefits only)' : ''); }));
     up.appendChild(U.kvLive('Spare after bills each month', function () { var b = S.budget(); return f.mp(b.free); }));
     up.appendChild(U.kvLive(U.term('Interest on your cash', 'rate'), function () { return s.cash >= 0 ? G.tape.M.save[s.d].toFixed(2) + '% a year' : 'Card: 24% a year'; }));
     up.appendChild(h('button', { cls: 'kv', style: 'width:100%', tap: function () { S.autopilot(); } }, U.term('Auto-invest', 'auto'), h('span', { cls: 'brass', live: function () { return s.auto.on && s.auto.alloc.length ? 'On' : 'Off. Set up'; } })));
@@ -4225,7 +4578,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   function marketRow(a, back, st) {
     var r = G.run, s = r.s, cv = h('canvas', { cls: 'spark' }), lastD = -1;
     var ch = h('div', { cls: 'v2' });
-    U.on(function () { var d = s.d; var c = chg(a, d, back); ch.textContent = f.pp(c); ch.className = 'v2 ' + f.sign(c); if (lastD < 0 || d - lastD >= 5) { lastD = d; C.spark(cv, a.pc, Math.max(a.start, d - (back >= 240 ? 240 : 60)), d, 56, 30, c); } });
+    U.on(function () { var d = s.d; var c = chg(a, d, back); ch.textContent = f.pp(c); ch.className = 'v2 ' + f.signPct(c); if (lastD < 0 || d - lastD >= 5) { lastD = d; C.spark(cv, a.pc, Math.max(a.start, d - (back >= 240 ? 240 : 60)), d, 56, 30, c); } });
     var extra = '';
     if (st && prefs.msort === 'pe') extra = st.pe ? 'P/E ' + st.pe.toFixed(0) : 'No profit'; else if (st && prefs.msort === 'yield') extra = 'Pays ' + f.pct(st.yield); else if (st && prefs.msort === 'growth') extra = 'Sales ' + f.pp(st.growth, 0); else if (st && prefs.msort === 'debt') extra = st.debtToProfit == null ? (st.debt <= 0 ? 'No debt' : 'No profit') : 'Debt ' + st.debtToProfit.toFixed(1) + 'x';
     return h('button', { cls: 'item', tap: function () { S.asset(a.id); } }, U.logo(a),
@@ -4253,7 +4606,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         ctl.el.querySelector('.sh-head').insertBefore(star, ctl.el.querySelector('.sh-head .x'));
         // price
         var c1 = h('span', { cls: 'tag' }), c2 = h('span', { cls: 'tag' });
-        U.on(function () { var d = curD(), x = chg(a, d, 1), y = chg(a, d, 240); c1.textContent = 'Today ' + f.pp(x); c1.className = 'tag ' + f.sign(x); c2.textContent = 'Past year ' + f.pp(y); c2.className = 'tag ' + f.sign(y); });
+        U.on(function () { var d = curD(), x = chg(a, d, 1), y = chg(a, d, 240); c1.textContent = 'Today ' + f.pp(x); c1.className = 'tag ' + f.signPct(x); c2.textContent = 'Past year ' + f.pp(y); c2.className = 'tag ' + f.signPct(y); });
         b.appendChild(h('div', { cls: 'rowf', style: 'align-items:flex-end;flex-wrap:wrap' }, h('div', { cls: 'pxbig', live: function () { return f.px(a.pc[curD()]); } }), h('div', { cls: 'rowf', style: 'gap:6px;padding-bottom:5px' }, c1, c2)));
         b.appendChild(h('div', { cls: 'mute', style: 'font-size:13px;margin-top:2px', text: a.kind === 'stock' ? a.tkr + '  ' + secName(a.sector) : a.kind === 'cmdty' ? a.tkr + '  price per ' + a.unit : a.tkr + '  ' + KIND_NAME[a.kind] }));
         if (a.end >= 0 && a.end <= s.d) b.appendChild(h('p', { cls: 'note bad', style: 'margin-top:10px', text: a.endWhy === 'bankrupt' ? 'This company went bankrupt in ' + f.date(a.end - s.day0) + '. Its shares are worthless and no longer trade.' : 'This company was bought out in ' + f.date(a.end - s.day0) + ' at ' + f.px(a.endPx) + ' a share. It no longer trades.' }));
@@ -4298,7 +4651,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
           card.appendChild(U.kvLive('You paid', function () { return f.money(r.posCost(id)); }));
           var g = h('span'); U.on(function () { var v = r.posValue(id), c = r.posCost(id); g.textContent = f.mp(v - c) + '  ' + f.pp(c ? (v - c) / c : 0); g.className = f.sign(v - c); });
           card.appendChild(h('div', { cls: 'kv' }, h('span', { text: 'Gain so far' }), g));
-          var al = h('span'); U.on(function () { var p = s.pme[id]; if (!p) return; var x = r.posValue(id) - p.u * M.tr[s.d]; al.textContent = f.mp(x); al.className = f.sign(x); });
+          var al = h('span'); U.on(function () { var p = s.pme[id]; if (!p) return; var x = r.posValue(id) - p.u * M.bench[s.d]; al.textContent = f.mp(x); al.className = f.sign(x); });
           card.appendChild(h('div', { cls: 'kv' }, U.term('Versus the index', 'pme'), al));
           host.appendChild(card);
         });
@@ -4425,11 +4778,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         var isBuy = st.side === 'buy', q = r.qty(id);
         if (App.tool('orders')) host.appendChild(U.seg([['market', 'Now'], ['limit', isBuy ? 'If it drops to' : 'If it rises to'], ['stop', isBuy ? 'If it rises to' : 'If it falls to']], function () { return st.kind; }, function (v) { st.kind = v; st.px = Math.round(a.pc[s.d] * (v === 'market' ? 1 : (isBuy ? (v === 'limit' ? 0.95 : 1.05) : (v === 'limit' ? 1.1 : 0.9)))); reg.render(); }));
         if (st.kind !== 'market') {
-          var pin = h('input', { id: 'tr-px', inputmode: 'decimal', value: (st.px / 100).toFixed(2), 'aria-label': 'Trigger price' });
-          pin.addEventListener('input', function () { st.px = Math.round(parseFloat(pin.value.replace(/[^0-9.]/g, '')) * 100) || 0; paint(); });
+          var pin = h('input', { id: 'tr-px', inputmode: 'decimal', maxlength: '14', value: (st.px / 100).toFixed(2), 'aria-label': 'Trigger price' });
+          pin.addEventListener('input', function () { st.px = U.parseMoney(pin.value); paint(); });
           host.appendChild(h('div', null, h('div', { cls: 'mute', style: 'font-size:12.5px;margin-bottom:4px' }, 'Trigger price. Now ', h('span', { live: function () { return f.px(a.pc[s.d]); } }), '. ', U.term(st.kind === 'limit' ? 'How limit orders work' : 'How stop orders work', st.kind)), h('label', { cls: 'amt' }, h('span', { text: '$' }), pin)));
         }
-        var input = h('input', { id: 'tr-amt', inputmode: 'decimal', placeholder: '0', 'aria-label': isBuy ? 'Dollars to spend' : 'Dollars to sell' });
+        var input = h('input', { id: 'tr-amt', inputmode: 'decimal', maxlength: '14', placeholder: '0', 'aria-label': isBuy ? 'Dollars to spend' : 'Dollars to sell' });
         host.appendChild(h('div', null, h('div', { cls: 'mute', style: 'font-size:12.5px;margin-bottom:4px', text: isBuy ? 'How much to spend' : 'How much to sell, in dollars' }), h('label', { cls: 'amt' }, h('span', { text: '$' }), input)));
         var info = h('div', { cls: 'card' });
         var go = h('button', { cls: 'btn ' + (isBuy ? 'buy' : 'sell') });
@@ -4441,7 +4794,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
           } }));
         });
         host.appendChild(chipsEl); host.appendChild(info); host.appendChild(go);
-        input.addEventListener('input', function () { st.amt = Math.round(parseFloat(input.value.replace(/[^0-9.]/g, '')) * 100) || 0; st.frac = 0; paint(); });
+        input.addEventListener('input', function () { st.amt = U.parseMoney(input.value); st.frac = 0; paint(); });
         if (st.amt) input.value = (st.amt / 100).toFixed(2);
         var res = null;
         function sellQty() { if (st.frac >= 0.999) return 'all'; if (st.frac > 0) return r.qty(id) * st.frac; var v = r.posValue(id); return v > 0 ? (st.amt >= v ? 'all' : r.qty(id) * st.amt / v) : 0; }
@@ -4456,7 +4809,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
             res = r.buy(id, st.amt, { dry: true });
             info.appendChild(U.kv('Price', f.px(px)));
             if (res.ok) { info.appendChild(U.kv('You get', f.qty(res.q) + (a.kind === 'cmdty' ? ' ' + a.unit + 's' : ' shares'))); info.appendChild(U.kv(U.term('Trading cost', 'fee'), f.money(res.fee))); info.appendChild(U.kv('Cash left', f.money(s.cash - res.total), 'total')); ok = true; }
-            else why = st.amt ? res.why : '';
+            else { why = st.amt ? res.why : ''; info.appendChild(U.kv('You get', '\u2013')); info.appendChild(U.kv(U.term('Trading cost', 'fee'), '\u2013')); info.appendChild(U.kv('Cash left', f.money(s.cash), 'total')); }
             go.textContent = 'Buy ' + (st.amt ? f.money(st.amt) + ' of ' : '') + a.tkr;
           } else {
             var qv = sellQty(); res = qv ? r.sell(id, qv, { dry: true }) : { ok: false, why: '' };
@@ -4468,10 +4821,10 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
               info.appendChild(U.kv(U.term('Tax', 'tax'), res.tax ? f.money(res.tax) + (res.st > 0 && res.lt <= 0 ? ' at 22%' : res.lt > 0 && res.st <= 0 ? ' at 15%' : '') : (res.gain > 0 ? 'None: covered by banked losses' : 'None')));
               if (res.st > 0 && res.tax > 0) info.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin:6px 0', text: 'Some of this was bought under a year ago, so its gain is taxed at 22% instead of 15%.' }));
               info.appendChild(U.kv('You receive', f.money(res.net), 'total')); ok = true;
-            } else why = res.why;
+            } else { why = res.why; info.appendChild(U.kv('Selling', '\u2013')); info.appendChild(U.kv(U.term('Trading cost', 'fee'), '\u2013')); info.appendChild(U.kv('Your gain on these', '\u2013')); info.appendChild(U.kv(U.term('Tax', 'tax'), '\u2013')); info.appendChild(U.kv('You receive', '\u2013', 'total')); }
             go.textContent = 'Sell ' + a.tkr;
           }
-          if (why) info.appendChild(h('p', { cls: 'down', style: 'font-size:13.5px;margin-top:6px', text: why }));
+          info.appendChild(h('p', { cls: 'down', style: 'font-size:13.5px;margin-top:6px;min-height:19px', text: why || '' })); // the slot is always there, so the panel does not change height under your finger
           go.disabled = !ok;
         }
         paint();
@@ -4625,10 +4978,10 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   function condWord(c) { return c >= 0.93 ? 'Excellent condition' : c >= 0.8 ? 'Good condition' : c >= 0.65 ? 'Tired, needs work' : 'A wreck. Needs everything'; }
   function amountSheet(o) { // { title, lead, max, label, chips: [[frac,label]], onGo(amt) -> result, go }
     U.sheet({ title: o.title, build: function (b, ctl) {
-      var amt = 0, input = h('input', { id: 'amt-in', inputmode: 'decimal', placeholder: '0', 'aria-label': o.label || 'Amount' });
+      var amt = 0, input = h('input', { id: 'amt-in', inputmode: 'decimal', maxlength: '14', placeholder: '0', 'aria-label': o.label || 'Amount' });
       var btn = h('button', { cls: 'btn pri', text: o.go || 'Confirm' }), note = h('div', { cls: 'mute', style: 'font-size:13px;min-height:18px' });
       function paint() { btn.disabled = !(amt > 0); if (o.note) note.textContent = o.note(amt) || ''; }
-      input.addEventListener('input', function () { amt = Math.round(parseFloat(input.value.replace(/[^0-9.]/g, '')) * 100) || 0; paint(); });
+      input.addEventListener('input', function () { amt = U.parseMoney(input.value); paint(); });
       var chips = h('div', { cls: 'chips' });
       (o.chips || [[0.25, '25%'], [0.5, '50%'], [1, 'Max']]).forEach(function (c) { chips.appendChild(h('button', { cls: 'chip', text: c[1], tap: function () { amt = Math.floor(o.max() * c[0]); input.value = (amt / 100).toFixed(2); paint(); } })); });
       U.tap(btn, function () { var r = o.onGo(amt); if (r && r.ok === false) { U.toast(r.why || 'That did not go through.', { kind: 'bad' }); BW.Audio.play('error'); return; } App.touch(); ctl.close(true); });
@@ -4665,7 +5018,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     bud.appendChild(U.kvLive('Businesses, last month', function () { return s.biz.length ? f.mp(B().biz) : 'None owned'; }));
     bud.appendChild(U.kvLive('Left to invest', function () { return f.mp(B().free); }, 'total'));
     el.appendChild(bud);
-    el.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Living costs rise with prices every year, and a little faster. Raises come once a year.' }));
+    el.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Living costs rise with prices every year, and a little faster.' + (s.job.salary > 0 ? ' Raises come once a year.' : ' There is no paycheck in this run: the money you started with has to do the work.') }));
 
     if (s.loan) {
       el.appendChild(h('h3', { text: 'Student loan' }));
@@ -4855,15 +5208,16 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         if (p.loan && !p.sale) acts.appendChild(h('button', { cls: 'btn', text: 'Pay down the mortgage', tap: function () { amountSheet({ title: 'Pay down the mortgage', lead: 'Saves you ' + p.loan.rate.toFixed(2) + '% a year on every dollar, guaranteed.', max: function () { return Math.min(Math.max(0, s.cash), p.loan ? p.loan.bal : 0); }, go: 'Pay',
           onGo: function (a) { var o = r.propPaydown(p.id, a); if (o.ok) { U.toast('Paid ' + f.ms(o.paid) + ' off the mortgage', { kind: 'good' }); BW.Audio.play('sell'); reg.render(); } return o; } }); } }));
         if (p.sale) acts.appendChild(h('button', { cls: 'btn ghost', text: 'Take it off the market', tap: function () { r.propCancelSale(p.id); App.touch(); reg.render(); } }));
+        else if (p.reno > 0) acts.appendChild(h('p', { cls: 'note', text: 'The builders are in for ' + p.reno + ' more month' + (p.reno > 1 ? 's' : '') + '. You can sell once the work is finished.' }));
         else {
           acts.appendChild(h('button', { cls: 'btn', text: 'Put it up for sale', tap: function () { var q3 = r.saleQuote(p, false);
             U.confirm({ title: 'Sell through an agent?', body: h('div', { cls: 'stack' }, h('p', { cls: 'lead', text: 'It takes one to four months to find a buyer, longer if the market is falling. Rent keeps coming in meanwhile.' }),
               h('div', { cls: 'card' }, U.kv('Likely price', f.ms(q3.px)), U.kv(U.term('Closing costs', 'closing'), f.ms(q3.closing)), U.kv('Mortgage to repay', f.ms(q3.bal)), U.kv('Tax on the gain', f.ms(q3.tax)), U.kv('You walk away with about', f.ms(q3.net), 'total'))),
-              yes: 'List it', onYes: function () { var o = r.propSell(p.id, false); if (o.ok) { U.toast('Listed for sale', { sub: 'Expect a buyer in about ' + Math.round(o.days / 20) + ' months.' }); App.touch(); reg.render(); } } }); } }));
+              yes: 'List it', onYes: function () { var o = r.propSell(p.id, false); if (o.ok) { U.toast('Listed for sale', { sub: 'Expect a buyer in about ' + Math.round(o.days / 20) + ' months.' }); App.touch(); reg.render(); } else { U.toast(o.why || 'That did not go through.', { kind: 'bad', ms: 4500 }); BW.Audio.play('error'); } } }); } }));
           acts.appendChild(h('button', { cls: 'btn ghost', text: 'Sell today to a cash buyer', tap: function () { var q4 = r.saleQuote(p, true);
             U.confirm({ title: 'Take the fast offer?', body: h('div', { cls: 'stack' }, h('p', { cls: 'lead', text: 'An investor will pay cash today, at 12% under what it is worth. That discount is the price of speed.' }),
               h('div', { cls: 'card' }, U.kv('Price', f.ms(q4.px)), U.kv('Costs', f.ms(q4.closing)), U.kv('Mortgage to repay', f.ms(q4.bal)), U.kv('Tax on the gain', f.ms(q4.tax)), U.kv('You walk away with', f.ms(q4.net), 'total'))),
-              yes: 'Sell now', danger: true, onYes: function () { var o = r.propSell(p.id, true); if (o.ok) { U.toast('Sold ' + p.addr, { kind: o.gain >= 0 ? 'good' : 'bad', sub: 'You walked away with ' + f.ms(o.net) }); BW.Audio.play('sell'); App.touch(); ctl.close(true); redraw(); } } }); } }));
+              yes: 'Sell now', danger: true, onYes: function () { var o = r.propSell(p.id, true); if (o.ok) { U.toast('Sold ' + p.addr, { kind: o.gain >= 0 ? 'good' : 'bad', sub: 'You walked away with ' + f.ms(o.net) }); BW.Audio.play('sell'); App.touch(); ctl.close(true); redraw(); } else { U.toast(o.why || 'That did not go through.', { kind: 'bad', ms: 4500 }); BW.Audio.play('error'); } } }); } }));
         }
         host.appendChild(acts);
       });
@@ -4891,7 +5245,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       list.appendChild(row);
     });
     el.appendChild(list);
-    U.once('x_biz', 'Owning a business', 'A business pays you its profit every month. Profit swings with the economy and with luck, and some months lose money. It is worth roughly half what you put in plus three years of profit, so you cannot get your money straight back out. The upside is that a good one can out-earn the stock market.');
+    U.once('x_biz', 'Owning a business', 'A business pays you its profit every month. Profit swings with the economy and with luck, and some months lose money. A buyer will always pay less than it cost to set up (about 15% less for a healthy one, far less for one that is struggling), so you cannot get your money straight back out. The upside is that a good one can out-earn the stock market.');
   }
   function bizBuySheet(b, redraw) {
     var r = G.run, s = r.s;
@@ -4902,6 +5256,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       card.appendChild(U.kv('Price', f.ms(cost)));
       card.appendChild(U.kv('Profit in a normal year, run by you', f.ms(base)));
       card.appendChild(U.kv('With a manager', f.ms(Math.round(base * 0.7))));
+      card.appendChild(U.kv('What it would sell for tomorrow', f.ms(Math.round(cost * 0.85))));
       card.appendChild(U.kv('Feels a recession', b.cyc >= 1.4 ? 'Badly' : b.cyc >= 0.8 ? 'Yes' : 'A little'));
       card.appendChild(U.kv('Month to month', b.vol >= 0.3 ? 'Very lumpy' : b.vol >= 0.2 ? 'Lumpy' : 'Fairly steady'));
       el.appendChild(card);
@@ -4993,7 +5348,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     var c = h('div', { cls: 'card' });
     c.appendChild(U.kv('Scenario', G.scen.name));
     c.appendChild(U.kvLive('Time left', function () { var left = s.endD - s.d; return left > 240 ? (left / 240).toFixed(1) + ' years' : Math.round(left / 20) + ' months'; }));
-    c.appendChild(h('button', { cls: 'kv', style: 'width:100%', tap: function () { S.shareCode(G.cfg.code); } }, h('span', { text: 'Challenge code for this market' }), h('span', { cls: 'brass num', text: G.cfg.code })));
+    c.appendChild(h('button', { cls: 'kv', style: 'width:100%', tap: function () { S.shareCode(G.cfg.code); } }, h('span', { text: 'Challenge code for this market' }), h('span', { cls: 'brass num nowrap', text: G.cfg.code })));
     el.appendChild(c);
     var l2 = h('div', { cls: 'list', style: 'margin-top:10px' });
     l2.appendChild(row('gear', 'Settings', 'Sound, pausing, look', function () { S.settings(); }));
@@ -5216,7 +5571,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       var inp = h('input', { cls: 'txt', id: 'res-code', placeholder: 'Paste the result code here', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Result code' });
       b.appendChild(h('div', { cls: 'stack' }, h('p', { cls: 'lead', text: 'Paste the whole message your friend sent. The code starts with R.' }), inp, h('button', { cls: 'btn pri', text: 'Add to scoreboard', tap: function () {
         var p = BW.parseResult(inp.value); if (!p.ok) { U.toast(p.why, { kind: 'bad' }); BW.Audio.play('error'); return; }
-        var rows = G.meta.friends[p.code] || (G.meta.friends[p.code] = []);
+        var rows = Array.isArray(G.meta.friends[p.code]) ? G.meta.friends[p.code] : (G.meta.friends[p.code] = []);
         if (!rows.some(function (x) { return x.name === p.name && x.score === p.score && x.attempt === p.attempt; })) rows.push({ name: p.name, score: p.score, dolly: p.dolly, attempt: p.attempt, bankrupt: p.bankrupt });
         App.saveSoon(); BW.Audio.play('unlock'); ctl.close(true); if (after) after(); else S.board(p.code); } })));
     } });
@@ -5231,7 +5586,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         else { var list = h('div', { cls: 'list', style: 'margin-top:12px' });
           rows.forEach(function (x, i) { var lead = x.dolly > 0 ? x.score / x.dolly - 1 : 0;
             list.appendChild(h('div', { cls: 'item' }, h('span', { cls: 'logo round', style: 'background:' + (i === 0 ? 'var(--brass);color:var(--brassInk)' : 'var(--bg3);color:var(--ink)'), text: String(i + 1) }),
-              h('span', { cls: 'grow' }, h('div', { cls: 't1', text: x.name + (x.me ? ' (you)' : '') }), h('div', { cls: 't2', text: (x.attempt > 1 ? 'Attempt ' + x.attempt + '. ' : 'First try. ') + (x.bankrupt ? 'Went bankrupt.' : '') })),
+              h('span', { cls: 'grow' }, h('div', { cls: 't1', text: x.me && x.name === 'You' ? 'You' : x.name + (x.me ? ' (you)' : '') }), h('div', { cls: 't2', text: (x.attempt > 1 ? 'Attempt ' + x.attempt + '. ' : 'First try. ') + (x.bankrupt ? 'Went bankrupt.' : '') })),
               h('span', { cls: 'right' }, h('div', { cls: 'v1', text: f.ms(x.score) }), h('div', { cls: 'v2 ' + f.sign(lead), text: f.pp(lead, 0) + ' vs Dolly' })))); });
           host.appendChild(list);
           host.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Dolly finished this market with ' + f.ms(rows[0].dolly) + '.' })); }
@@ -5366,13 +5721,16 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     var m = G.meta;
     if (!m.boxes.length) { host.appendChild(h('div', { cls: 'empty', text: 'No lockboxes waiting. Finish a run to earn one. The better you do against Dolly, the better the box.' })); return; }
     host.appendChild(h('p', { cls: 'lead', text: 'Tap a lockbox to open it.' }));
+    var opening = false;
     var wrap = h('div', { cls: 'grid3', style: 'margin-top:14px' });
     m.boxes.forEach(function (bx, i) {
       var tier = BW.BOX_TIERS[bx.tier], el = h('div', { cls: 'box', style: '--bc:' + BOXCOL[bx.tier] });
       wrap.appendChild(h('button', { cls: 'cell', style: 'min-height:130px', 'aria-label': 'Open ' + tier.name, tap: function () {
+        if (opening || bx.opened) return; opening = true; bx.opened = true;
         el.classList.add('shake'); BW.Audio.play('shake');
         setTimeout(function () {
-          m.boxes.splice(i, 1);
+          var at = m.boxes.indexOf(bx); if (at < 0) { opening = false; return; }
+          m.boxes.splice(at, 1);
           var out = BW.openBox(m, bx.tier, Math.random); App.saveSoon();
           BW.Audio.play('box', out.item.r); BW.Audio.buzz(out.item.r >= 3 ? [20, 40, 20, 40, 60] : 20);
           U.sheet({ title: tier.name, build: function (b2, ctl) {
@@ -5409,9 +5767,9 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 
   S.settings = function () {
     var m = G.meta, st = m.set;
-    U.sheet({ title: 'Settings', full: true, build: function (b) {
+    U.sheet({ title: 'Settings', full: true, onClose: function () { if (App.ui.hub) App.render(); }, build: function (b) {
       var name = h('input', { cls: 'txt', id: 'set-name', maxlength: '12', placeholder: 'Your name on scoreboards', value: m.name || '', autocomplete: 'off', 'aria-label': 'Your name' });
-      name.addEventListener('input', function () { m.name = name.value.replace(/[|]/g, '').slice(0, 12); App.saveSoon(); });
+      name.addEventListener('input', function () { m.name = BW.cleanName(name.value); App.saveSoon(); });
       b.appendChild(name);
       var sw = function (label, sub, key) { return U.switchRow(label, sub, function () { return st[key]; }, function (v) { st[key] = v; App.applyLook(); App.saveSoon(); }); };
       b.appendChild(h('h3', { text: 'Sound and feel' }));
@@ -5432,7 +5790,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   S.howto = function () {
     U.sheet({ title: 'How to play', full: true, build: function (b) {
       [['The goal', 'Finish the run with more money than Dolly. She gets the same pay, bills and surprises as you, and she only ever buys the index fund. Your score is what you would keep after selling everything and paying tax.'],
-        ['Time', 'A year passes in about a minute. Pause with the brass button, step a week at a time, or run at up to 8x. While a panel is open the clock waits.'],
+        ['Time', 'A year passes in about a minute. Pause with the brass button, step a week at a time, or run faster: up to 8x, and 16x once you unlock Fast Forward. While a panel is open the clock waits.'],
         ['Investing', 'Open the Market to buy stocks, funds, bonds and commodities. Tap anything to see its chart, its numbers and the news behind its moves. Dotted words explain themselves.'],
         ['The news', 'Stories are generated from what is really happening inside the simulated economy and companies. Some are facts, some are rumors, some are noise. Tap a story to see what the price did afterwards.'],
         ['Life', 'Your paycheck arrives monthly. Under Life you can pay down debt, lock money in deposits, buy and renovate property with a mortgage, and own businesses.'],
@@ -5446,7 +5804,9 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   function settle() {
     var m = G.meta, r = G.run, s = r.s, sc = G.scen, cfg = G.cfg;
     var res = BW.analyze(r, G.dolly, sc), played = res.years, full = !s.early;
-    var out = { res: res, bells: BW.bellsFor(res, sc, played, r.tape.dest), badges: [], cards: [], box: null, daily: 0 };
+    // A friend's code can take you to a place you have not unlocked yet. You can play it, but the richer payout waits until you have.
+    var destOpenNow = !r.tape.dest.cost || !!m.unlocked['dest_' + r.tape.dest.id];
+    var out = { res: res, bells: BW.bellsFor(res, sc, played, destOpenNow ? r.tape.dest : null), badges: [], cards: [], box: null, daily: 0 };
     m.stats.runs++; m.stats.years += played; if (res.ratio > 1 && full) m.stats.beats++;
     if (cfg.mode === 'daily' && !m.daily[cfg.date]) { m.stats.dailies = (m.stats.dailies || 0) + 1; out.daily = 8; }
     if (cfg.mode === 'daily' && (!m.daily[cfg.date] || res.score > m.daily[cfg.date].score)) m.daily[cfg.date] = { score: res.score, dolly: res.dolly, ratio: res.ratio };
@@ -5459,7 +5819,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     m.runs.unshift({ scen: sc.id, dest: cfg.dest, code: cfg.code, mode: cfg.mode, years: played, score: res.score, dolly: res.dolly, ratio: res.ratio, bells: out.total, t: Date.now(), bankrupt: s.bankrupt, early: !!s.early });
     if (m.runs.length > 40) m.runs.length = 40;
     if (full && (!m.best[sc.id] || res.ratio > m.best[sc.id])) m.best[sc.id] = res.ratio;
-    if (s.fair && full) { var rows = m.friends[cfg.code] || (m.friends[cfg.code] = []); rows.push({ name: m.name || 'You', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt, me: true }); }
+    if (s.fair && full) { var rows = Array.isArray(m.friends[cfg.code]) ? m.friends[cfg.code] : (m.friends[cfg.code] = []); rows.push({ name: m.name || 'You', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt, me: true }); }
     out.resultCode = s.fair && full ? BW.makeResult({ code: cfg.code, name: m.name || 'Anon', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt }) : null;
     G.resultsShown = true; G.lastOut = out;
     App.save();
@@ -5492,12 +5852,13 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 
       b.appendChild(h('h3', null, 'Where the gap came from, ', U.term('measured against the index', 'pme')));
       var rows = res.cats.filter(function (c) { return c.cat !== 'herd' || Math.abs(c.alpha) > 100; }).map(function (c) { return [c.label, c.alpha]; });
+      if (Math.abs(res.exit) >= 100) rows.push(['Tax and selling costs still to pay', res.exit]);
       rows.push(['Cash on the sidelines, debts, timing', res.idle]);
       var max = 1; rows.forEach(function (x) { max = Math.max(max, Math.abs(x[1])); });
       var bars = h('div', { cls: 'bars card' });
       rows.forEach(function (x) { var w = Math.min(50, 50 * Math.abs(x[1]) / max);
         bars.appendChild(h('div', { cls: 'bar' }, h('span', { text: x[0] }), h('span', { cls: 'num ' + f.sign(x[1]), style: 'font-weight:700', text: f.mp(x[1]) }), h('div', { cls: 'trk' }, h('i', { style: (x[1] >= 0 ? 'left:50%;' : 'right:50%;') + 'width:' + w + '%;background:var(' + (x[1] >= 0 ? '--up' : '--down') + ')' })))); });
-      bars.appendChild(h('div', { cls: 'kv total', style: 'margin-top:6px' }, h('span', { text: 'Your net worth minus Dolly\'s' }), h('span', { cls: f.sign(res.gap), text: f.mp(res.gap) })));
+      bars.appendChild(h('div', { cls: 'kv total', style: 'margin-top:6px' }, h('span', { text: 'Your walk-away value minus Dolly\'s' }), h('span', { cls: f.sign(res.gap), text: f.mp(res.gap) })));
       b.appendChild(bars);
       b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'Each line asks: if every dollar you put there had gone into the ' + tape.dest.indexName + ' fund on the same day instead, how much more or less would you have now?' }));
 
@@ -5533,6 +5894,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       b.appendChild(h('h3', { text: 'What you earned' }));
       var rw = h('div', { cls: 'card stack' });
       rw.appendChild(h('div', { cls: 'rowf' }, h('span', { cls: 'grow', text: 'Bells for this run' }), h('span', { cls: 'bellcount', style: 'font-size:20px' }, bellIcon(), '+' + out.total)));
+      if (tape.dest.cost && !m.unlocked['dest_' + tape.dest.id]) rw.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'You reached ' + tape.dest.name + ' on a friend\'s code. Runs there pay ' + Math.round((tape.dest.mult - 1) * 100) + '% more Bells once you unlock it yourself.' }));
       if (out.daily) rw.appendChild(h('div', { cls: 'mute', style: 'font-size:13px', text: 'Includes 8 for finishing today\'s Daily Tape.' }));
       if (res.years < 1) rw.appendChild(h('div', { cls: 'mute', style: 'font-size:13px', text: 'Runs shorter than a year earn nothing.' }));
       out.badges.forEach(function (bd) { rw.appendChild(h('div', { cls: 'rowf rar' + bd.r }, h('span', { cls: 'medal', html: U.icon('trophy') }), h('span', { cls: 'grow' }, h('div', { style: 'font-weight:700', text: bd.name }), h('div', { cls: 'mute', style: 'font-size:12.5px', text: bd.desc })), h('span', { cls: 'rar', text: '+' + BW.BADGE_BELLS[bd.r] }))); });
@@ -5607,7 +5969,18 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   K.slotRTP = (function () { var t = 0, n = 0; K.STRIPS[0].forEach(function (a) { K.STRIPS[1].forEach(function (b) { K.STRIPS[2].forEach(function (c) { t += K.slotPay(a, b, c); n++; }); }); }); return t / n; })();
 
   /* ---------- shared UI ---------- */
-  function settle(total, payout, edge) { var r = G.run.casinoSettle(total, payout, edge); App.touch(); return r; }
+  // Money leaves your cash the moment a bet is placed, and comes back only when the bet is decided.
+  function stake(amount, edge) { var r = G.run.casinoBet(amount, edge); App.touch(); return r.ok; }
+  function payOut(staked, payout) { var r = G.run.casinoPay(staked, payout); App.touch(); return r; }
+  // A hand in progress stays on the table if you look away, so walking off is never a way to dodge a bad one.
+  var live = { run: null, bj: null, vp: null, flight: 0 };
+  function table(key, fresh) { if (live.run !== G.run) { live = { run: G.run, bj: null, vp: null, flight: 0 }; } return live[key] || (live[key] = fresh()); }
+  function onTable() { // stakes that belong to a hand or a spin still in progress
+    var t = live.flight;
+    if (live.bj && live.bj.phase === 'play') live.bj.hands.forEach(function (x) { t += x.bet; });
+    if (live.vp && live.vp.phase === 'hold') t += live.vp.stake;
+    return t;
+  }
   function betBar(onChange) {
     var s = G.run.s, opts = [500, 2500, 10000, 50000, 250000, 1000000].filter(function (v, i) { return i < 3 || v <= Math.max(s.cash, 10000); });
     if (opts.indexOf(bet) < 0) bet = opts[Math.min(1, opts.length - 1)];
@@ -5617,13 +5990,20 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     var s = G.run.s, card = h('div', { cls: 'card', style: 'margin-top:12px' });
     card.appendChild(U.kvLive('Your cash', function () { return f.money(s.cash); }));
     card.appendChild(U.kvLive('Bet in total this run', function () { return f.ma(s.tot.casinoBet); }));
-    var net = h('span'); U.on(function () { var n = s.tot.casinoWon - s.tot.casinoBet; net.textContent = (n >= 0 ? 'Up ' : 'Down ') + f.ma(Math.abs(n)); net.className = f.sign(n); });
+    var net = h('span'); U.on(function () { var n = s.tot.casinoWon - s.tot.casinoBet + (s.casOpen || 0); net.textContent = n === 0 ? 'Even' : (n > 0 ? 'Up ' : 'Down ') + f.ma(Math.abs(n)); net.className = n === 0 ? '' : f.sign(n); });
     card.appendChild(h('div', { cls: 'kv' }, h('span', { text: 'How you are doing' }), net));
     card.appendChild(U.kvLive('What the odds say you should have lost', function () { return f.ma(Math.round(s.tot.casinoEV)); }));
     el.appendChild(card);
   }
 
   K.open = function () {
+    var s0 = G.run.s;
+    if (live.run !== G.run) live = { run: G.run, bj: null, vp: null, flight: 0 };
+    // A bet left on the table when the page was closed cannot be picked up again: the cards are gone.
+    if ((s0.casOpen || 0) > onTable()) {
+      var lost = s0.casOpen - onTable(); G.run.casinoPay(lost, 0); App.touch();
+      U.toast('You left a bet on the table', { kind: 'bad', sub: f.ma(lost) + ' was lost when you walked away.', ms: 5000 });
+    }
     U.sheet({ title: 'Casino', full: true, build: function (b) {
       var body = h('div', { style: 'margin-top:12px' });
       b.appendChild(U.seg([['bj', 'Blackjack'], ['rl', 'Roulette'], ['sl', 'Slots'], ['vp', 'Poker']], function () { return tab; }, function (v) { tab = v; reg.render(); }));
@@ -5636,7 +6016,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   /* ---------- blackjack ---------- */
   var bjShoe = [];
   function blackjack(host) {
-    var s = G.run.s, st = { phase: 'bet', hands: [], dealer: [], cur: 0, msg: 'Place your bet.' };
+    var s = G.run.s, st = table('bj', function () { return { phase: 'bet', hands: [], dealer: [], cur: 0, msg: 'Place your bet.' }; });
     var felt = h('div', { cls: 'felt' }), ctr = h('div', { cls: 'stack', style: 'margin-top:12px' });
     host.appendChild(felt); host.appendChild(ctr);
     host.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:10px', text: 'Six decks. Dealer stands on 17. Blackjack pays 3 to 2. The house keeps about 0.5% of every dollar bet if you play each hand perfectly, and 2% or more if you play on instinct.' }));
@@ -5654,7 +6034,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       if (!st.hands.length) ph.appendChild(h('div', { cls: 'hand' }));
       felt.appendChild(ph);
       if (st.phase === 'play') {
-        var x = st.hands[st.cur], two = x.cards.length === 2, canMore = s.cash >= total() + x.bet;
+        var x = st.hands[st.cur], two = x.cards.length === 2, canMore = s.cash >= x.bet;
         ctr.appendChild(h('div', { cls: 'btns' }, h('button', { cls: 'btn', text: 'Stand', tap: stand }), h('button', { cls: 'btn pri', text: 'Hit', tap: hit })));
         var extra = h('div', { cls: 'btns' });
         if (two && canMore) extra.appendChild(h('button', { cls: 'btn ghost', text: 'Double', tap: dbl }));
@@ -5667,7 +6047,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       }
     }
     function start() {
-      if (bet > s.cash) return;
+      if (st.phase === 'play' || bet > s.cash || !stake(bet, 0.005)) return;
       st.hands = [{ cards: [draw(), draw()], bet: bet }]; st.dealer = [draw(), draw()]; st.cur = 0; st.phase = 'play'; st.msg = '';
       var pv = K.bjValue(st.hands[0].cards).total, dv = K.bjValue(st.dealer).total;
       if (pv === 21 || dv === 21) { st.natural = pv === 21; finish(true); return; }
@@ -5675,8 +6055,8 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     }
     function hit() { var x = st.hands[st.cur]; x.cards.push(draw()); if (K.bjValue(x.cards).total >= 21) next(); else paint(); }
     function stand() { next(); }
-    function dbl() { var x = st.hands[st.cur]; x.bet *= 2; x.cards.push(draw()); BW.Audio.play('chip'); next(); }
-    function split() { var x = st.hands[0]; st.hands = [{ cards: [x.cards[0], draw()], bet: x.bet, split: true }, { cards: [x.cards[1], draw()], bet: x.bet, split: true }]; BW.Audio.play('chip'); if (K.bjValue(st.hands[0].cards).total >= 21) next(); else paint(); }
+    function dbl() { var x = st.hands[st.cur]; if (!stake(x.bet, 0.005)) return; x.bet *= 2; x.cards.push(draw()); BW.Audio.play('chip'); next(); }
+    function split() { var x = st.hands[0]; if (!stake(x.bet, 0.005)) return; st.hands = [{ cards: [x.cards[0], draw()], bet: x.bet, split: true }, { cards: [x.cards[1], draw()], bet: x.bet, split: true }]; BW.Audio.play('chip'); if (K.bjValue(st.hands[0].cards).total >= 21) next(); else paint(); }
     function next() { st.cur++; if (st.cur >= st.hands.length) finish(false); else if (K.bjValue(st.hands[st.cur].cards).total >= 21) next(); else paint(); }
     function finish(natural) {
       var live = st.hands.some(function (x) { return K.bjValue(x.cards).total <= 21; });
@@ -5685,7 +6065,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       st.hands.forEach(function (x) { var pv = K.bjValue(x.cards).total, pBJ = x.cards.length === 2 && pv === 21 && !x.split; tot += x.bet;
         if (pv > 21) return; if (pBJ && !dBJ) { pay += Math.round(x.bet * 2.5); return; } if (dBJ && !pBJ) return;
         if (dv > 21 || pv > dv) pay += x.bet * 2; else if (pv === dv) pay += x.bet; });
-      settle(tot, pay, 0.005);
+      payOut(tot, pay);
       var net = pay - tot; st.phase = 'done';
       st.msg = net > 0 ? (pay === Math.round(tot * 2.5) && st.hands.length === 1 && st.hands[0].cards.length === 2 ? 'Blackjack! ' : 'You win ') + f.m0(net) : net === 0 ? 'Push. Your bet comes back.' : (dBJ ? 'Dealer has blackjack. ' : '') + 'You lose ' + f.m0(-net);
       BW.Audio.play(net > 0 ? 'good' : net === 0 ? 'tick' : 'bad'); paint();
@@ -5700,7 +6080,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     host.appendChild(h('div', { cls: 'felt' }, h('div', { cls: 'wheelwrap' }, cv), msg));
     var grid = h('div', { cls: 'rgrid', style: 'margin-top:12px' }), out = h('div', { cls: 'rout' }), btnRefs = {};
     function total() { var t = 0; for (var k in bets) t += bets[k]; return t; }
-    function place(k, b) { if (spinning) return; if (total() + bet > s.cash) { U.toast('Not enough cash for another chip.', { kind: 'bad' }); return; } bets[k] = (bets[k] || 0) + bet; b.classList.add('bet'); BW.Audio.play('chip'); paintGo(); }
+    function place(k, b) { if (spinning) return; if (total() + bet > s.cash) { msg.textContent = 'Not enough cash for another chip.'; BW.Audio.play('error'); return; } bets[k] = (bets[k] || 0) + bet; b.classList.add('bet'); BW.Audio.play('chip'); paintGo(); }
     function mkb(k, label, cls) { var b = h('button', { cls: cls || '', text: label, 'aria-label': 'Bet on ' + label, tap: function () { place(k, b); } }); btnRefs[k] = b; return b; }
     for (var row = 0; row < 3; row++) for (var col = 0; col < 12; col++) { var n = col * 3 + (3 - row); grid.appendChild(mkb('n' + n, String(n), K.isRed(n) ? 'r' : 'b')); }
     host.appendChild(grid);
@@ -5724,8 +6104,8 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       g.restore();
     }
     U.tap(go, function () {
-      var t = total(); if (!t || spinning || t > s.cash) return;
-      spinning = true; paintGo(); msg.textContent = 'No more bets.';
+      var t = total(); if (!t || spinning || t > s.cash || !stake(t, 1 / 37)) return;
+      spinning = true; live.flight += t; paintGo(); msg.textContent = 'No more bets.';
       var idx = rnd(37), n3 = K.WHEEL[idx], seg = Math.PI * 2 / 37, t0 = performance.now(), dur = 3600, a0 = angle, turns = 4 * Math.PI * 2, lastTick = 0;
       var ballEnd = a0 + turns + idx * seg; // ball ends over the winning pocket, wherever the wheel stops
       (function loop(ts) {
@@ -5735,7 +6115,7 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
         var tk = Math.floor(ball / seg); if (tk !== lastTick) { lastTick = tk; if (k < 0.97) BW.Audio.play('rtick'); }
         if (k < 1 && cv.isConnected) { requestAnimationFrame(loop); return; }
         angle = angle % (Math.PI * 2);
-        var pay = K.roulettePay(bets, n3); settle(t, pay, 1 / 37); spinning = false; last = n3;
+        var pay = K.roulettePay(bets, n3); live.flight -= t; payOut(t, pay); spinning = false; last = n3;
         var net = pay - t; msg.textContent = n3 + (n3 === 0 ? ' green. ' : K.isRed(n3) ? ' red. ' : ' black. ') + (net > 0 ? 'You win ' + f.m0(net) : net === 0 ? 'You break even.' : 'You lose ' + f.m0(-net));
         BW.Audio.play(net > 0 ? 'good' : 'thunk'); bets = {}; for (var kk in btnRefs) btnRefs[kk].classList.remove('bet'); paintGo();
       })(t0);
@@ -5767,19 +6147,19 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     host.appendChild(pt);
     host.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:10px', text: 'Over time this machine pays back ' + (K.slotRTP * 100).toFixed(1) + '% of what goes in. The other ' + ((1 - K.slotRTP) * 100).toFixed(1) + '% is the house\'s, far more than any table game takes. The lights and near-misses are there so you do not notice.' }));
     U.tap(go, function () {
-      if (busy || bet > s.cash) return; busy = true; paint(); msg.textContent = '';
-      var res = K.STRIPS.map(function (st) { return st[rnd(st.length)]; }), stake = bet;
+      if (busy || bet > s.cash || !stake(bet, 1 - K.slotRTP)) return; busy = true; paint(); msg.textContent = '';
+      var res = K.STRIPS.map(function (st) { return st[rnd(st.length)]; }), staked = bet; live.flight += staked;
       reels.forEach(function (r, i) { r.classList.add('spin'); var iv = setInterval(function () { symbol(cvs[i], 'SBHCRYX'[rnd(7)]); }, 70);
         setTimeout(function () { clearInterval(iv); r.classList.remove('spin'); symbol(cvs[i], res[i]); BW.Audio.play('thunk');
-          if (i === 2) { var mult = K.slotPay(res[0], res[1], res[2]), pay = stake * mult; settle(stake, pay, 1 - K.slotRTP); busy = false;
-            msg.textContent = mult ? (mult >= 2 ? 'You win ' + f.m0(pay - stake) : 'Your bet comes back.') : 'Nothing.'; if (mult >= 20) BW.Audio.play('jackpot'); else if (mult > 1) BW.Audio.play('coin'); paint(); } }, 600 + i * 450); });
+          if (i === 2) { var mult = K.slotPay(res[0], res[1], res[2]), pay = staked * mult; live.flight -= staked; payOut(staked, pay); busy = false;
+            msg.textContent = mult ? (mult >= 2 ? 'You win ' + f.m0(pay - staked) : 'Your bet comes back.') : 'Nothing.'; if (mult >= 20) BW.Audio.play('jackpot'); else if (mult > 1) BW.Audio.play('coin'); paint(); } }, 600 + i * 450); });
     });
     paint();
   }
 
   /* ---------- video poker: Jacks or Better ---------- */
   function poker(host) {
-    var s = G.run.s, st = { phase: 'bet', cards: [], held: [false, false, false, false, false], deck: [], msg: 'Jacks or Better. Deal five cards.', stake: 0 };
+    var s = G.run.s, st = table('vp', function () { return { phase: 'bet', cards: [], held: [false, false, false, false, false], deck: [], msg: 'Jacks or Better. Deal five cards.', stake: 0 }; });
     var felt = h('div', { cls: 'felt', style: 'min-height:200px' }), ctr = h('div', { cls: 'stack', style: 'margin-top:12px' });
     host.appendChild(felt); host.appendChild(ctr);
     var pt = h('div', { cls: 'card', style: 'margin-top:12px' }); K.PAYS.forEach(function (p) { pt.appendChild(U.kv(p[0], p[1] === 1 ? 'Your bet back' : p[1] + 'x your bet')); }); host.appendChild(pt);
@@ -5792,15 +6172,15 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
       if (st.phase === 'hold') { ctr.appendChild(h('p', { cls: 'mute', style: 'font-size:13px;text-align:center', text: 'Tap the cards you want to keep.' })); ctr.appendChild(h('button', { cls: 'btn pri', text: 'Draw', tap: drawStep })); }
       else { ctr.appendChild(betBar(paint)); var d = h('button', { cls: 'btn pri', text: 'Deal for ' + f.m0(bet), tap: deal }); d.disabled = bet > s.cash; ctr.appendChild(d); }
     }
-    function deal() { if (bet > s.cash) return; st.deck = shoe(1); st.cards = [0, 1, 2, 3, 4].map(function () { BW.Audio.play('card'); return st.deck.pop(); }); st.held = [false, false, false, false, false]; st.stake = bet; st.phase = 'hold'; var r0 = K.pokerRank(st.cards); st.msg = r0 >= 0 ? 'You already have ' + K.PAYS[r0][0].toLowerCase() + '.' : ''; paint(); }
-    function drawStep() { st.cards = st.cards.map(function (c, i) { if (st.held[i]) return c; BW.Audio.play('card'); return st.deck.pop(); }); var rk = K.pokerRank(st.cards), pay = rk >= 0 ? st.stake * K.PAYS[rk][1] : 0; settle(st.stake, pay, 0.0046); st.phase = 'bet'; st.held = [false, false, false, false, false];
+    function deal() { if (st.phase === 'hold' || bet > s.cash || !stake(bet, 0.0046)) return; st.deck = shoe(1); st.cards = [0, 1, 2, 3, 4].map(function () { BW.Audio.play('card'); return st.deck.pop(); }); st.held = [false, false, false, false, false]; st.stake = bet; st.phase = 'hold'; var r0 = K.pokerRank(st.cards); st.msg = r0 >= 0 ? 'You already have ' + K.PAYS[r0][0].toLowerCase() + '.' : ''; paint(); }
+    function drawStep() { st.cards = st.cards.map(function (c, i) { if (st.held[i]) return c; BW.Audio.play('card'); return st.deck.pop(); }); var rk = K.pokerRank(st.cards), pay = rk >= 0 ? st.stake * K.PAYS[rk][1] : 0; payOut(st.stake, pay); st.phase = 'bet'; st.held = [false, false, false, false, false];
       st.msg = rk >= 0 ? K.PAYS[rk][0] + '. ' + (pay > st.stake ? 'You win ' + f.m0(pay - st.stake) : 'Your bet comes back.') : 'Nothing. You lose ' + f.m0(st.stake); BW.Audio.play(rk >= 0 ? (rk <= 3 ? 'jackpot' : rk === 8 ? 'tick' : 'good') : 'bad'); paint(); }
     paint();
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
-window.BW_BUILD="2026-10-07 05:27";
-(function(){function go(){try{BW.App.boot();}catch(e){console.error(e);var a=document.getElementById("app");if(a)a.innerHTML='<p style="padding:24px;font:16px system-ui;color:#fff">Bellwether hit an error while starting: '+String(e&&e.message||e)+'</p>';}}if(window.claude&&window.claude.hot&&window.claude.hot.ready){window.claude.hot.ready(go);}else if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",go);}else{go();}})();
+window.BW_BUILD="2026-10-07 09:19";
+(function(){function go(){try{BW.App.boot();}catch(e){console.error(e);var a=document.getElementById("app");if(a){a.innerHTML='<div style="padding:24px;font:16px/1.5 system-ui;color:#fff"><p>Bellwether could not start.</p><p style="opacity:.7;font-size:13px"></p><p>If this keeps happening, the saved game on this device may be damaged. Starting fresh erases your progress on this device.</p><button style="font:600 16px system-ui;padding:14px 18px;border-radius:12px;border:0;background:#E6BA4E;color:#231a05">Start fresh</button></div>';a.querySelector("p+p").textContent=String(e&&e.message||e);a.querySelector("button").onclick=function(){try{var k="bellwether.save.v1",v=localStorage.getItem(k);if(v)localStorage.setItem(k+".bad",v);localStorage.removeItem(k);}catch(x){}location.reload();};}}}if(window.claude&&window.claude.hot&&window.claude.hot.ready){window.claude.hot.ready(go);}else if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",go);}else{go();}})();
 </script>
 </body>
 </html>

@@ -294,13 +294,14 @@
       M.idx[d] = d === 0 ? 1000 : M.idx[d - 1] * ratio;
       M.tr[d] = d === 0 ? 1000 : M.tr[d - 1] * (ratio + (sumPrev > 0 ? divs / sumPrev : 0));
       if (d > 0) { fundAcc += fundF * (sumPrev > 0 ? divs / sumPrev : 0); fundF *= ratio * (1 - fund.fee * DT); }
-      fund.pc[d] = Math.round(fundF * 100);
+      // The fund's price includes dividends it has collected but not yet handed on, and steps down on the day it pays them out.
       if (d % 60 === 59 && fundAcc > 0.0001) { fund.divs.push({ d: d, amt: Math.round(fundAcc * 10000) / 10000 }); fundAcc = 0; }
+      fund.pc[d] = Math.round((fundF + fundAcc) * 100);
       for (i = 0; i < secList.length; i++) {
         var sf = secFunds[secList[i].id], a2 = secAgg[secList[i].id];
         if (d > 0 && a2 && a2.p > 0) { sf.acc += sf.f * a2.dv / a2.p; sf.f *= a2.n / a2.p * (1 - sf.fee * DT); }
-        sf.pc[d] = Math.max(1, Math.round(sf.f * 100));
         if (d % 60 === 59 && sf.acc > 0.0001) { sf.divs.push({ d: d, amt: Math.round(sf.acc * 10000) / 10000 }); sf.acc = 0; }
+        sf.pc[d] = Math.max(1, Math.round((sf.f + sf.acc) * 100));
       }
       M.pe[d] = d % 5 === 0 ? (niNow > 0 ? clamp(capNow / niNow, 4, 80) : 80) : (d > 0 ? M.pe[d - 1] : 16);
 
@@ -443,6 +444,7 @@
         var mis = clamp(0.07 * rP.n(), -0.18, 0.16);
         var motivated = rP.chance(0.16);
         if (motivated) mis -= 0.03;
+        if (mis < -0.1) mis = -0.1; // nothing is listed so far under its value that it could be flipped the same day
         var dur = Math.round((40 + 120 * rP.next()) * (mis < -0.06 ? 0.45 : 1));
         listings.push({ id: 'L' + (lid++), d0: Math.max(d, 0), d1: Math.min(N - 1, d + dur), type: pt.id, tname: pt.name, grade: gr, com: !!pt.com, units: pt.units,
           addr: rP.int(2, 180) + ' ' + rP.pick(STREETS), full0: Math.round(full), cond: r2(cond), ask: Math.round(val * dexp(mis) / 500) * 50000,
@@ -451,6 +453,14 @@
       }
     }
 
+    // What one dollar left in the index fund becomes, with payouts taxed at the dividend rate and put straight back in.
+    // This is what Dolly's money does, so it is the yardstick every other holding is measured against.
+    M.bench = new Float64Array(N); M.bench[0] = 1000;
+    for (var bd = 1, bq = 0; bd < N; bd++) {
+      while (bq < fund.divs.length && fund.divs[bq].d < bd) bq++;
+      var bpay = bq < fund.divs.length && fund.divs[bq].d === bd ? fund.divs[bq].amt * 100 * 0.85 : 0;
+      M.bench[bd] = M.bench[bd - 1] * (fund.pc[bd] + bpay) / fund.pc[bd - 1];
+    }
     var tape = { v: BW.ENGINE_VERSION, cfg: cfg, dest: dest, seed: seed, N: N, W: W, years: years, M: M, assets: assets, order: order, companies: companies, news: news,
       life: life, listings: listings, sectors: secList, fundId: 'herd' };
     return tape;

@@ -27,12 +27,50 @@
     return el;
   };
   U.clear = function (el) { while (el.firstChild) el.removeChild(el.firstChild); return el; };
+  // Every tappable thing goes through here, which is where stray taps are filtered out.
+  // "The same control" means the same label in the same style, because many screens redraw their buttons after every tap.
+  //  1. A second tap on one control within a few hundredths of a second is one finger bouncing, not two decisions.
+  //     If the control was redrawn in between (Hit, after a card arrives), the gap has to be a quarter of a second.
+  //  2. A control that was not on screen when you last tapped ignores taps for a moment, so "Deal" never turns into
+  //     "Deal, Hit" and opening a panel never also presses something inside it. Controls that were already there
+  //     (the next card to hold, Stand after Hit) are never held up. Hammering keeps the hold going until you pause.
+  //  3. Nothing inside a panel that is sliding shut can be pressed, and for a moment after it shuts neither can
+  //     whatever was underneath it, so extra taps on a confirm button do not land on the screen behind.
+  var lastTap = { t: -1e9, sig: '', el: null, seen: null }, quietUntil = 0;
+  function nowMs() { return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(); }
+  function sigOf(el) { return (el.getAttribute('aria-label') || el.textContent || '').slice(0, 48) + '|' + String(el.className).split(' ')[0]; }
+  function onScreen() { // labels of every control you could have tapped just now
+    var set = {}, all = document.querySelectorAll('button, [role=button]'), i;
+    for (i = 0; i < all.length; i++) if (all[i].offsetParent !== null) set[sigOf(all[i])] = 1;
+    return set;
+  }
+  U.tapGuardMs = 300;
   U.tap = function (el, fn) {
+    el._born = nowMs();
     el.addEventListener('click', function (e) {
       if (el.disabled) return;
+      var t = nowMs(), sig = sigOf(el), gap = t - lastTap.t;
+      if (sig === lastTap.sig && gap < (el === lastTap.el ? 70 : 250)) return;
+      if (gap < U.tapGuardMs && el._born >= lastTap.t0 && lastTap.seen && !lastTap.seen[sig]) { lastTap.t = t; return; }
+      if (t < quietUntil || (el.closest && el.closest('.closing'))) return;
+      lastTap = { t: t, t0: t, sig: sig, el: el, seen: onScreen() };
       if (BW.Audio) BW.Audio.unlock();
       fn(e);
     });
+  };
+  // "12.50", "1,250", "12,50" (decimal comma) and "$3 000" all mean what a person would expect. Anything odd is zero.
+  U.parseMoney = function (str) {
+    var t = String(str == null ? '' : str).trim().replace(/[\s$€£]/g, '');
+    if (!t || /[-+eE]/.test(t)) return 0;
+    if (t.indexOf(',') >= 0) {
+      if (t.indexOf('.') >= 0 && t.lastIndexOf(',') > t.lastIndexOf('.')) t = t.replace(/\./g, '').replace(',', '.'); // 1.250,50
+      else if (t.indexOf('.') >= 0 || /^\d{1,3}(,\d{3})+$/.test(t)) t = t.replace(/,/g, '');
+      else if (/^\d+,\d{1,2}$/.test(t)) t = t.replace(',', '.');
+      else t = t.replace(/,/g, '');
+    }
+    if (!/^\d*\.?\d*$/.test(t)) return 0;
+    var v = Math.round(parseFloat(t) * 100);
+    return v > 0 && isFinite(v) ? Math.min(v, 1e14) : 0;
   };
 
   /* ---------- live bindings ---------- */
@@ -67,15 +105,17 @@
   F.ms = function (c) { return Math.abs(c) >= 1e9 ? BW.fmtMoney(c, { short: true }) : BW.fmtMoney(c, { whole: true }); }; // short once it gets silly
   F.mp = function (c) { return BW.fmtMoney(c, { whole: Math.abs(c) >= 100000, plus: c > 0 }); };
   F.px = function (c) { return BW.fmtMoney(c); };
-  F.pct = function (x, dp, plus) { if (x == null || !isFinite(x)) return 'n/a'; return (plus && x > 0 ? '+' : '') + (x * 100).toFixed(dp == null ? 1 : dp) + '%'; };
+  F.pct = function (x, dp, plus) { if (x == null || !isFinite(x)) return 'n/a'; var t = (x * 100).toFixed(dp == null ? 1 : dp); if (parseFloat(t) === 0) return (0).toFixed(dp == null ? 1 : dp) + '%'; return (plus && x > 0 ? '+' : '') + t + '%'; };
+  F.signPct = function (x, dp) { return x == null || !isFinite(x) || parseFloat((x * 100).toFixed(dp == null ? 1 : dp)) === 0 ? '' : x > 0 ? 'up' : 'down'; }; // colour for a percentage, with none for one that rounds to zero
   F.pp = function (x, dp) { return F.pct(x, dp, true); };
   F.num = function (x, dp) { if (x == null || !isFinite(x)) return 'n/a'; return x.toFixed(dp == null ? 1 : dp); };
   F.big = function (m) { // $ millions to words
     var a = Math.abs(m); return (m < 0 ? '-' : '') + '$' + (a >= 1000 ? (a / 1000).toFixed(a >= 10000 ? 0 : 1) + 'B' : a >= 10 ? Math.round(a) + 'M' : a.toFixed(1) + 'M');
   };
   F.qty = function (q) { return q >= 1000 ? Math.round(q).toLocaleString('en-US') : q >= 10 ? q.toFixed(2) : q.toFixed(4); };
-  F.date = function (rel) { var p = BW.dateParts(rel); return p.mname + ' Y' + p.year; };
-  F.dateLong = function (rel) { var p = BW.dateParts(rel); return p.mname + ' ' + p.day + ', Year ' + p.year; };
+  // Days before the run started are counted backwards in plain words rather than as "Year 0" or "Year -1".
+  F.date = function (rel) { var p = BW.dateParts(rel), k = 1 - p.year; return rel < 0 ? p.mname + ', ' + (k === 1 ? 'year before' : k + ' yrs before') : p.mname + ' Y' + p.year; };
+  F.dateLong = function (rel) { var p = BW.dateParts(rel), k = 1 - p.year; return rel < 0 ? p.mname + ' ' + p.day + ', ' + (k === 1 ? 'the year before you started' : k + ' years before you started') : p.mname + ' ' + p.day + ', Year ' + p.year; };
   F.ago = function (days) { if (days <= 0) return 'today'; if (days < 5) return days + 'd ago'; if (days < 20) return Math.round(days / 5) + 'w ago'; if (days < 240) return Math.round(days / 20) + 'mo ago'; return (days / 240).toFixed(1) + 'y ago'; };
   F.sign = function (x) { return x > 0 ? 'up' : x < 0 ? 'down' : ''; };
 
@@ -111,6 +151,17 @@
   var stack = [];
   U.sheetCount = function () { return stack.length; };
   // opts: { title, full, build(body, ctl), foot(el, ctl), onClose }
+  // The phone's Back button (or back swipe) closes the panel on top instead of leaving the game.
+  // Each open panel has one spare step in the browser's history for Back to use up. The game never moves through
+  // history itself, so it can never navigate away by accident. The only cost: after closing panels by hand, the
+  // same number of Back presses do nothing before the next one leaves.
+  var guards = 0;
+  try { if (window.history.state && window.history.state.bwPanel) guards = 1; } catch (e) { /* no history here */ } // reloaded while sitting on a spare step: reuse it
+  function histGuard() { while (guards < stack.length) { try { window.history.pushState({ bwPanel: 1 }, ''); guards++; } catch (e) { return; } } }
+  if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('popstate', function () {
+    guards = Math.max(0, guards - 1);
+    if (stack.length) stack[stack.length - 1].close();
+  });
   U.sheet = function (opts) {
     var host = document.getElementById('sheets');
     var scope = U.newScope();
@@ -124,11 +175,11 @@
     ctl.el = el;
     if (opts.foot) { var foot = U.h('div', { cls: 'sh-foot' }); opts.foot(foot, ctl); el.appendChild(foot); }
     ctl.close = function (silent) {
-      if (ctl.closed) return; ctl.closed = true;
+      if (ctl.closed) return; ctl.closed = true; quietUntil = nowMs() + 280;
       var i = stack.indexOf(ctl); if (i >= 0) stack.splice(i, 1);
       U.dropScope(scope);
       if (U.cur === scope) U.cur = stack.length ? stack[stack.length - 1].scope : U.baseScope || scopes[0];
-      el.classList.remove('in'); scrim.classList.remove('in');
+      el.classList.remove('in'); scrim.classList.remove('in'); el.classList.add('closing'); scrim.classList.add('closing');
       setTimeout(function () { if (el.parentNode) host.removeChild(el); if (scrim.parentNode) host.removeChild(scrim); }, 260);
       if (opts.onClose) opts.onClose();
       if (!silent && BW.Audio) BW.Audio.play('close');
@@ -136,7 +187,7 @@
     U.tap(scrim, function () { ctl.close(); });
     host.appendChild(scrim); host.appendChild(el);
     opts.build(body, ctl);
-    stack.push(ctl);
+    stack.push(ctl); histGuard();
     U.cur = scope; // while this sheet is on top, new bindings attach to it
     requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('in'); scrim.classList.add('in'); }); });
     if (BW.Audio) BW.Audio.play('open');
@@ -167,11 +218,12 @@
   U.toast = function (text, o) {
     o = o || {};
     var host = document.getElementById('toasts');
-    while (host.children.length >= 3) host.removeChild(host.firstChild);
-    var t = U.h('button', { cls: 'toast ' + (o.kind || '') }, U.h('span', { cls: 'grow' }, text, o.sub ? U.h('small', { text: o.sub }) : null));
+    while (host.children.length >= 2) host.removeChild(host.firstChild);
+    // only a toast that does something when tapped is allowed to catch taps; the rest let them through to what is underneath
+    var t = U.h(o.onTap ? 'button' : 'div', { cls: 'toast ' + (o.kind || '') + (o.onTap ? ' act' : ''), role: o.onTap ? null : 'status' }, U.h('span', { cls: 'grow' }, text, o.sub ? U.h('small', { text: o.sub }) : null));
     var gone = false;
     function out() { if (gone) return; gone = true; t.classList.add('out'); setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260); }
-    U.tap(t, function () { out(); if (o.onTap) o.onTap(); });
+    if (o.onTap) U.tap(t, function () { out(); o.onTap(); });
     host.appendChild(t);
     setTimeout(out, o.ms || 3200);
     return t;
@@ -206,13 +258,27 @@
       U.h('span', { cls: 'grow' }, U.h('div', { cls: 't1', text: label }), sub ? U.h('div', { cls: 't2', style: 'white-space:normal', text: sub }) : null), sw);
   };
   var LOGO_SHAPES = ['', 'round', 'cut', 'leaf'];
+  // Two letters for each sector that no other sector in the same world shares.
+  var secCodes = {};
+  function secCode(tape, id) {
+    var key = tape.dest.id, map = secCodes[key];
+    if (!map) {
+      map = secCodes[key] = {}; var used = {};
+      tape.sectors.forEach(function (sx) {
+        var nm = sx.name.replace(/[^A-Za-z]/g, ''), c = '', k;
+        for (k = 1; k < nm.length; k++) { c = nm.charAt(0).toUpperCase() + nm.charAt(k).toLowerCase(); if (!used[c]) break; }
+        used[c] = 1; map[sx.id] = c;
+      });
+    }
+    return map[id] || '?';
+  }
   U.logo = function (a, size) {
     var tape = BW.G && BW.G.tape, hue = 210, shape = '', txt = a.tkr.slice(0, 2), sat = 48, lum = 36;
     if (a.kind === 'stock') {
       var s = tape.sectors.filter(function (x) { return x.id === a.sector; })[0];
       var k = BW.hashStr(a.id); hue = (s ? s.hue : 200) + (k % 31) - 15; shape = LOGO_SHAPES[k % 4];
     } else if (a.kind === 'fund') { hue = 44; sat = 70; lum = 38; shape = 'round'; txt = a.tkr.slice(0, 1); }
-    else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; }
+    else if (a.kind === 'sfund') { var s2 = tape.sectors.filter(function (x) { return x.id === a.sector; })[0]; hue = s2 ? s2.hue : 200; sat = 30; shape = 'round'; txt = secCode(tape, a.sector); }
     else if (a.kind === 'bond') { hue = 205; sat = 22; lum = 40; txt = a.tkr.slice(1, 3); }
     else if (a.kind === 'cmdty') { hue = { gold: 45, oil: 20, copper: 18, wheat: 52 }[a.id] || 30; sat = a.id === 'oil' ? 12 : 62; lum = a.id === 'oil' ? 22 : 40; shape = 'leaf'; var w = a.name.split(' '); txt = w.length > 1 ? w[0].charAt(0) + w[1].charAt(0) : a.name.slice(0, 2); }
     else if (a.kind === 'crypto') { hue = 285; sat = 60; lum = 48; shape = 'round'; txt = a.tkr.slice(0, 1); }

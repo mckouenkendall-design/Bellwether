@@ -19,19 +19,65 @@
     return lsSet(JSON.stringify(data));
   };
   App.saveSoon = function () { ui.needSave = true; };
+  // Saved data can be old, half-written, or edited by hand. Anything that is not the shape the game expects is
+  // replaced with a fresh default, piece by piece, so one bad field never costs the whole profile.
+  function kind(x) { return Array.isArray(x) ? 'array' : x === null ? 'null' : typeof x; }
+  function fin(x) { return typeof x === 'number' && isFinite(x); }
+  function repair(m, fresh) {
+    if (kind(m) !== 'object') return fresh;
+    var k, j;
+    for (k in fresh) if (kind(m[k]) !== kind(fresh[k]) || (typeof fresh[k] === 'number' && !fin(m[k]))) m[k] = fresh[k];
+    ['set', 'cos', 'stats'].forEach(function (g) { for (j in fresh[g]) if (kind(m[g][j]) !== kind(fresh[g][j]) || (typeof fresh[g][j] === 'number' && !fin(m[g][j]))) m[g][j] = fresh[g][j]; });
+    for (k in fresh.cos.owned) m.cos.owned[k] = 1;
+    [['theme', 'th_floor'], ['bell', 'bl_brass'], ['candle', 'cd_classic'], ['title', 'tt_rookie']].forEach(function (c) { if (!BW.COS_BY[m.cos[c[0]]]) m.cos[c[0]] = c[1]; });
+    m.bells = Math.max(0, Math.round(m.bells)); m.bellsEarned = Math.max(0, Math.round(m.bellsEarned));
+    m.name = BW.cleanName(m.name);
+    m.boxes = m.boxes.filter(function (b) { return b && BW.BOX_TIERS[b.tier]; }).map(function (b) { return { tier: b.tier }; });
+    m.runs = m.runs.filter(function (r) { return kind(r) === 'object' && BW.SCEN_BY[r.scen] && fin(r.score) && fin(r.dolly) && fin(r.ratio); });
+    for (k in m.best) if (!fin(m.best[k])) delete m.best[k];
+    var fr = {};
+    Object.keys(m.friends).forEach(function (code) {
+      if (!BW.parseCode(code).ok || !Array.isArray(m.friends[code])) return;
+      fr[code] = m.friends[code].filter(function (x) { return kind(x) === 'object' && fin(x.score) && fin(x.dolly); }).map(function (x) { return { name: BW.cleanName(x.name) || 'Anon', score: x.score, dolly: x.dolly, attempt: fin(x.attempt) ? x.attempt : 1, bankrupt: !!x.bankrupt, me: !!x.me }; });
+    });
+    m.friends = fr;
+    return m;
+  }
+  // Is this saved run something the engine can safely carry on with?
+  function soundRun(s, tape) {
+    if (kind(s) !== 'object') return false;
+    var whole = function (x) { return fin(x) && Math.round(x) === x; };
+    if (!whole(s.d) || s.d < tape.W || s.d > tape.N - 1 || s.day0 !== tape.W || !whole(s.endD) || !whole(s.cash)) return false;
+    if (kind(s.pos) !== 'object' || kind(s.flow) !== 'object' || kind(s.tot) !== 'object' || kind(s.st) !== 'object' || kind(s.job) !== 'object' || kind(s.auto) !== 'object' || kind(s.tax) !== 'object' || kind(s.hist) !== 'object' || kind(s.pme) !== 'object' || kind(s.ps) !== 'object') return false;
+    if (!Array.isArray(s.cds) || !Array.isArray(s.props) || !Array.isArray(s.biz) || !Array.isArray(s.orders) || !Array.isArray(s.acts) || !Array.isArray(s.hist.nw) || !Array.isArray(s.hist.liq) || !Array.isArray(s.hist.cashW) || !Array.isArray(s.auto.alloc)) return false;
+    if (!fin(s.job.salary) || !fin(s.job.living) || !fin(s.tax.lossBank) || !fin(s.accr)) return false;
+    var k; for (k in s.tot) if (!fin(s.tot[k])) return false;
+    for (k in s.flow) if (!fin(s.flow[k])) return false;
+    for (k in s.pos) { var p = s.pos[k]; if (!tape.assets[k] || kind(p) !== 'object' || !fin(p.q) || !(p.q > 0) || !Array.isArray(p.lots) || !p.lots.length) return false;
+      if (!p.lots.every(function (l) { return Array.isArray(l) && fin(l[0]) && whole(l[1]) && whole(l[2]); })) return false; }
+    // the lists: every entry has to be something the engine could have written itself
+    var obj = function (x) { return kind(x) === 'object'; }, pos0 = function (x) { return fin(x) && x >= 0; };
+    if (typeof s.done !== 'boolean' || (!s.done && s.d >= s.endD) || s.endD > tape.N - 1) return false;
+    if (!s.cds.every(function (c) { return obj(c) && whole(c.p) && c.p > 0 && fin(c.rate) && (c.term === 1 || c.term === 3 || c.term === 5) && whole(c.d0) && whole(c.d1) && c.d1 > c.d0 && whole(c.int); })) return false;
+    if (!s.props.every(function (x) { return obj(x) && typeof x.id === 'string' && typeof x.addr === 'string' && fin(x.cond) && pos0(x.full0) && whole(x.d0) && whole(x.buyD) && whole(x.price) && whole(x.basis) && fin(x.rent0) && whole(x.reno) && whole(x.vacant) && whole(x.lease) && fin(x.units) && fin(x.sellDays)
+      && (x.loan === null || (obj(x.loan) && whole(x.loan.bal) && fin(x.loan.rate) && whole(x.loan.pay) && whole(x.loan.orig))) && (x.sale === null || (obj(x.sale) && whole(x.sale.d) && fin(x.sale.f))); })) return false;
+    if (!s.biz.every(function (x) { return obj(x) && BW.BIZ_BY[x.type] && whole(x.lvl) && x.lvl >= 1 && x.lvl <= 10 && whole(x.buyD) && whole(x.invested) && fin(x.net) && Array.isArray(x.ttm) && x.ttm.every(fin); })) return false;
+    if (!s.orders.every(function (o) { return obj(o) && tape.assets[o.id] && (o.side === 'buy' || o.side === 'sell') && (o.kind === 'limit' || o.kind === 'stop') && whole(o.px) && pos0(o.amt) && pos0(o.frac); })) return false;
+    if (!s.auto.alloc.every(function (a) { return obj(a) && tape.assets[a.id] && pos0(a.pct); }) || !pos0(s.auto.keep)) return false;
+    if (!(s.loan === null || (obj(s.loan) && whole(s.loan.bal) && fin(s.loan.rate) && whole(s.loan.pay)))) return false;
+    if (!pos0(s.job.outUntil) || !fin(s.feeMult) || !fin(s.taxMult) || !fin(s.renoMult) || !fin(s.agentMult) || !fin(s.selfSlots) || !fin(s.salaryMult) || !whole(s.startCash)) return false;
+    if (![s.hist.nw, s.hist.liq, s.hist.cashW].every(function (arr) { return arr.every(fin); })) return false;
+    for (k in s.st) if (typeof s.st[k] === 'number' && !fin(s.st[k])) return false;
+    if (!Array.isArray(s.st.sellLog) || !Array.isArray(s.st.buyLog) || !Array.isArray(s.watch) || !obj(s.offers)) return false;
+    return true;
+  }
   function load() {
     var raw = lsGet(), data = null;
     if (raw) { try { data = JSON.parse(raw); } catch (e) { data = null; } }
+    if (kind(data) !== 'object') data = null;
     var fresh = BW.newMeta();
-    if (data && data.meta) { // fill in anything added since the save was made
-      var m = data.meta, k;
-      for (k in fresh) if (m[k] == null) m[k] = fresh[k];
-      for (k in fresh.set) if (m.set[k] == null) m.set[k] = fresh.set[k];
-      for (k in fresh.cos.owned) m.cos.owned[k] = 1;
-      for (k in fresh.stats) if (m.stats[k] == null) m.stats[k] = fresh.stats[k];
-      G.meta = m;
-    } else G.meta = fresh;
-    return data && data.run ? data.run : null;
+    try { G.meta = data && data.meta ? repair(data.meta, fresh) : fresh; } catch (e) { console.error(e); G.meta = BW.newMeta(); }
+    return data && kind(data.run) === 'object' && kind(data.run.cfg) === 'object' ? data.run : null;
   }
   App.wipe = function () { try { window.localStorage.removeItem(KEY); } catch (e) { /* ignore */ } };
 
@@ -194,6 +240,7 @@
           U.toast(a.name + (e.why === 'bankrupt' ? ' went bankrupt' : ' was bought out'), { kind: e.why === 'bankrupt' ? 'bad' : 'good', sub: e.why === 'bankrupt' ? 'Your shares are worth nothing.' : 'You were paid ' + f.ma(e.net) + ' in cash.', ms: 6000 });
           BW.Audio.play(e.why === 'bankrupt' ? 'bad' : 'sell'); pauseWhy = pauseWhy || { h: a.name }; break;
         case 'fill': U.toast('Order filled: ' + (e.side === 'buy' ? 'bought ' : 'sold ') + tape.assets[e.id].tkr, { kind: 'brass', sub: 'At ' + f.px(e.px) }); BW.Audio.play(e.side === 'buy' ? 'buy' : 'sell'); break;
+        case 'orderfail': U.toast('Order cancelled: ' + tape.assets[e.id].tkr, { kind: 'bad', sub: e.why === 'cash' ? 'The price was reached, but you did not have the cash set aside for it.' : 'There was nothing left to sell.', ms: 5000 }); BW.Audio.play('error'); break;
         case 'jobloss': U.toast('You were laid off', { kind: 'bad', sub: 'No paycheck for about ' + e.months + ' months. Benefits cover part of it.', ms: 6000 }); BW.Audio.play('bad'); pauseWhy = pauseWhy || { h: 'job' }; break;
         case 'jobback': U.toast('You found a new job', { kind: 'good', sub: 'Paychecks resume.' }); BW.Audio.play('good'); break;
         case 'raise': if (e.promo) { U.toast('Promoted. Pay up ' + e.pct.toFixed(0) + '%', { kind: 'good', sub: 'New salary ' + f.m0(e.salary) + ' a year' }); BW.Audio.play('good'); } break;
@@ -258,12 +305,13 @@
       G.cfg = cfg; G.scen = scen;
       G.tape = BW.genTape({ seed: cfg.seed, years: scen.years, dest: cfg.dest, mods: scen.mods });
       var rc = { life: scen.life, perks: cfg.perks };
+      if (!soundRun(saved.s, G.tape)) { G.tape = null; G.cfg = null; G.scen = null; return false; }
       G.run = new BW.Run(G.tape, rc, saved.s);
       G.dolly = BW.dollySeries(G.tape, rc, saved.s.d);
       ui.speed = (saved.ui && saved.ui.speed) || 1; ui.newsSeen = T.newsCount(G.tape, G.run.s.d); ui.unread = (saved.ui && saved.ui.unread) || 0; ui.paused = true; ui.cache = { d: -1 };
       var k = ui.newsSeen - 1; while (k >= 0 && G.tape.news[k].sev < 2) k--; ui.tick = k >= 0 ? G.tape.news[k] : null;
       return true;
-    } catch (e) { console.error(e); G.run = null; return false; }
+    } catch (e) { console.error(e); G.run = null; G.tape = null; G.cfg = null; G.dolly = null; return false; }
   }
   App.abandon = function () { G.run = null; G.tape = null; G.dolly = null; G.cfg = null; App.save(); App.toHub(); };
 
@@ -286,8 +334,8 @@
       var idx = '12345'.indexOf(e.key); if (idx >= 0) { ui.speed = SPEEDS[idx][0]; ui.dirty = true; }
     });
     // a deep link like #BW1CE-K7QM2X opens that challenge
-    var hash = (location.hash || '').replace('#', '');
-    if (hash && BW.parseCode(hash).ok) setTimeout(function () { BW.Screens.challenge(hash); }, 300);
+    var hash = (location.hash || '').replace('#', ''), hp = hash ? BW.parseCode(hash) : null;
+    if (hp && hp.ok) setTimeout(function () { BW.Screens.challenge(hp.code); }, 300);
     ui.last = performance.now();
     requestAnimationFrame(frame);
     if (window.claude && window.claude.hot && window.claude.hot.snapshot) { try { window.claude.hot.snapshot(function () { App.save(); return {}; }); } catch (e) { /* not in a viewer */ } }

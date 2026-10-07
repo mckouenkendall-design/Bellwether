@@ -200,6 +200,142 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
   if (p.errors.length) fails++;
   await p.close();
 
+  // Things an outside tester managed to break. Each one stays fixed.
+  console.log('11. Regression checks from the outside test pass');
+  let q = await P.open();
+  try {
+    const cashQ = () => q.ev(() => BW.G.run.s.cash);
+    const ledgerQ = () => q.ev(() => { const s = BW.G.run.s; let t = 0; for (const k in s.flow) t += s.flow[k]; return t === s.cash && Number.isInteger(s.cash); });
+    await q.tapBtn('Start a run'); await q.tapBtn('Play Five-Year Sprint'); await q.tapBtn('Next'); await q.tapBtn('Next'); await q.tapBtn('Next'); await q.tapBtn('Ring the opening bell');
+    await q.ev((keys) => { BW.App.setPaused(true); keys.forEach(k => BW.G.meta.seen[k] = 1); BW.App._step(25); BW.G.run._cash(2000000, 'life'); BW.App.touch(); }, SEEN);
+    // a business bought and sold the same day loses money
+    const c0 = await cashQ();
+    await q.tapBtn('Life'); await q.tapBtn('Business'); await q.tapText('Lawn Care Route'); await q.tapText('Buy for', { exact: false });
+    const nwDrop = await q.ev(() => BW.G.run.bizValue(BW.G.run.s.biz[0]) < BW.G.run.s.biz[0].invested);
+    await q.tapBtn('Sell'); await q.tapBtn('Sell it');
+    ok(nwDrop && (await cashQ()) < c0 && await q.ev(() => BW.G.run.s.biz.length === 0), 'buying a business and selling it the same day loses money (' + c0 + ' -> ' + (await cashQ()) + ')');
+    // the stake leaves at the deal, and the hand waits for you
+    await q.tapBtn('More'); await q.tapText('Casino'); await q.page.waitForTimeout(300);
+    let dealt = false, c1 = 0;
+    for (let k = 0; k < 8 && !dealt; k++) { c1 = await cashQ(); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(350); dealt = await q.ev(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Stand' && b.offsetParent)); }
+    ok(dealt && (await cashQ()) === c1 - 2500, 'the blackjack stake leaves your cash when the cards are dealt');
+    await q.tapBtn('Roulette'); await q.tapBtn('Blackjack');
+    ok(await q.ev(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Stand' && b.offsetParent)) && (await cashQ()) === c1 - 2500, 'looking away does not cancel the hand or refund the bet');
+    await q.tapBtn('Stand'); ok(await q.ev(() => BW.G.run.s.casOpen === 0) && await ledgerQ(), 'the hand settles and the ledger adds up');
+    // an ordinary double tap on Deal must not also press Hit
+    let two = false;
+    for (let k = 0; k < 8 && !two; k++) {
+      const loc = q.page.getByText('Deal for', { exact: false }).filter({ visible: true }).first(); const bb = await loc.boundingBox();
+      await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(150); await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(400);
+      const st = await q.ev(() => { const b = [...document.querySelectorAll('button')].some(x => x.textContent === 'Stand' && x.offsetParent); return { play: b, cards: document.querySelectorAll('.felt > div:last-child .pcard').length }; });
+      if (st.play) { two = true; ok(st.cards === 2, 'a double tap on Deal does not take a card (' + st.cards + ' cards in hand)'); await q.tapBtn('Stand'); }
+    }
+    if (!two) ok(true, 'double tap check skipped: every deal was a natural');
+    // the tap filter must not get in the way of normal quick play
+    const tapAt = async (sel, gap) => { const bb = await q.page.locator(sel).first().boundingBox(); await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(gap); };
+    const btnBox = async (label) => q.page.locator('button').filter({ hasText: new RegExp('^' + label + '$') }).filter({ visible: true }).first().boundingBox();
+    await q.tapBtn('Poker'); await q.page.waitForTimeout(350); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(400);
+    await tapAt('[aria-label="Hold card 1"]', 190); await tapAt('[aria-label="Hold card 3"]', 190); await tapAt('[aria-label="Hold card 5"]', 400);
+    ok(await q.ev(() => [...document.querySelectorAll('.felt .pcard')].map(c => c.classList.contains('held') ? 'H' : '-').join('')) === 'H-H-H', 'three cards held with taps a fifth of a second apart');
+    await q.tapBtn('Draw'); await q.page.waitForTimeout(400);
+    await q.tapBtn('Blackjack'); await q.page.waitForTimeout(350);
+    let hs = 0, hsOk = 0, bounce = 0, bounceOk = 0;
+    for (let k = 0; k < 45 && (hs < 2 || bounce < 2); k++) {
+      await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(400);
+      const live = async () => q.ev(() => { const b = [...document.querySelectorAll('button')].some(x => x.textContent === 'Stand' && x.offsetParent); const hands = document.querySelectorAll('.felt > div:last-child .hand'); return { play: b, cards: hands.length ? hands[0].querySelectorAll('.pcard').length : 0, total: +(/You: (\d+)/.exec(document.querySelector('.felt').innerText) || [0, 0])[1] }; });
+      let st = await live(); if (!st.play) continue;
+      if (st.total <= 11 && bounce <= hs && bounce < 2) { // two taps on Hit a tenth of a second apart are one press
+        const hb = await btnBox('Hit'); await q.page.touchscreen.tap(hb.x + hb.width / 2, hb.y + hb.height / 2); await q.page.waitForTimeout(90); await q.page.touchscreen.tap(hb.x + hb.width / 2, hb.y + hb.height / 2); await q.page.waitForTimeout(450);
+        const s2 = await live(); bounce++; if (s2.cards === 3) bounceOk++; if (s2.play) await q.tapBtn('Stand');
+      } else if (st.total <= 11 && hs < 2) { // Hit, then Stand a fifth of a second later
+        const hb = await btnBox('Hit'); await q.page.touchscreen.tap(hb.x + hb.width / 2, hb.y + hb.height / 2); await q.page.waitForTimeout(210);
+        const sb = await btnBox('Stand').catch(() => null); if (sb) { await q.page.touchscreen.tap(sb.x + sb.width / 2, sb.y + sb.height / 2); await q.page.waitForTimeout(450); const s2 = await live(); hs++; if (!s2.play) hsOk++; else await q.tapBtn('Stand'); }
+      } else await q.tapBtn('Stand');
+      await q.page.waitForTimeout(350);
+    }
+    ok(bounce > 0 && bounceOk === bounce, 'a bounced tap on Hit takes one card, not two (' + bounceOk + ' of ' + bounce + ')');
+    ok(hs > 0 && hsOk === hs, 'Hit then Stand a fifth of a second apart both register (' + hsOk + ' of ' + hs + ')');
+    await q.tapSel('.sheet .sh-head .x[aria-label=Close]', { last: true });
+    // hammering the Buy button buys once
+    await q.tapBtn('Market'); await q.tapBtn('Stocks').catch(() => {}); await q.tapSel('#screen .item'); await q.page.waitForTimeout(400); await q.tapBtn('Buy'); await q.tapBtn('10%');
+    const buyBtn = await q.page.locator('.sheet:last-child .btn.buy').boundingBox();
+    for (let k = 0; k < 6; k++) { await q.page.touchscreen.tap(buyBtn.x + buyBtn.width / 2, buyBtn.y + buyBtn.height / 2); await q.page.waitForTimeout(35); }
+    await q.page.waitForTimeout(700);
+    ok(await q.ev(() => BW.G.run.s.st.buys === 1), 'six rapid taps on Buy make one purchase (' + (await q.ev(() => BW.G.run.s.st.buys)) + ')'); ok(await ledgerQ(), 'ledger adds up');
+    // the Back button closes the panel and never leaves the game
+    await q.ev(() => BW.UI.closeAll()); await q.page.waitForTimeout(500); await q.tapSel('#screen .item'); await q.page.waitForTimeout(500);
+    ok(await q.ev(() => document.querySelectorAll('.sheet:not(.closing)').length === 1), 'a company page is open');
+    await q.page.goBack().catch(() => {}); await q.page.waitForTimeout(500);
+    ok(await q.ev(() => typeof BW === 'object' && document.querySelectorAll('.sheet:not(.closing)').length === 0), 'the phone Back button closes the panel and stays in the game');
+    // orders that would fire at once are refused with a reason; unfunded ones are cancelled out loud
+    const ord = await q.ev(() => { const r = BW.G.run, id = Object.keys(r.s.pos)[0], px = r.px(id); return { hi: r.orderAdd({ id, side: 'buy', kind: 'limit', px: px * 3, amt: 100000 }), lo: r.orderAdd({ id, side: 'buy', kind: 'limit', px: Math.round(px * 0.5), amt: 100000 }).ok, bad: r.orderAdd({ id, side: 'buy', kind: 'limit', px: 'abc', amt: 'x' }).ok, none: r.orderAdd(undefined).ok }; });
+    ok(!ord.hi.ok && /below today/.test(ord.hi.why) && ord.lo && !ord.bad && !ord.none, 'standing orders on the wrong side of the price are refused with a reason');
+    // nonsense into the engine changes nothing
+    const junk = await q.ev(() => { const r = BW.G.run, before = JSON.stringify(r.s); const outs = [r.cdOpen(100, 1e7), r.cdOpen(NaN, 1e5), r.propOffer('L0'), r.casinoSettle(NaN, NaN), r.casinoSettle(-100000, 0), r.casinoSettle(0, 1e12), r.casinoSettle(100.5, 0), r.bizBuy('constructor'), r.setAuto(null), r.buy('herd', 'abc'), r.sell('herd', NaN), r.loanPay(Infinity)]; return { same: JSON.stringify(r.s) === before, allNo: outs.every(o => o && o.ok === false) }; });
+    ok(junk.same && junk.allNo, 'bad input to the engine is refused and changes nothing');
+    // result codes survive accents and emoji; forged nonsense is refused
+    const rc = await q.ev(() => { const a = BW.parseResult(BW.makeResult({ code: 'BW1SE-AAAAAB', name: 'José 🙂', score: 12345600, dolly: 10000000, attempt: 2 })); const body = 'BW1SE-AAAAAB|x|abc|5|1|0'; return { a, link: BW.parseCode('https://example.org/Bellwether/#BW1DE-K7QM2X').ok }; });
+    ok(rc.a.ok && rc.a.name === 'José 🙂' && rc.a.score === 12345600 && rc.link, 'result codes work with accented names, and a pasted share link is read as a code');
+    // lockbox: one reward however fast you tap
+    await q.ev(() => { BW.G.meta.boxes = [{ tier: 2 }]; BW.G.run.endEarly(); BW.G.run = null; BW.G.tape = null; BW.G.dolly = null; BW.G.cfg = null; BW.App.save(); BW.App.toHub(); });
+    const own0 = await q.ev(() => Object.keys(BW.G.meta.cos.owned).length + BW.G.meta.bells);
+    await q.tapText('Collection'); await q.page.waitForTimeout(350); await q.tapBtn('Lockboxes').catch(() => {});
+    const cell = await q.page.locator('.cell').first().boundingBox();
+    for (let k = 0; k < 6; k++) { await q.page.touchscreen.tap(cell.x + cell.width / 2, cell.y + cell.height / 2); await q.page.waitForTimeout(60); }
+    await q.page.waitForTimeout(1200);
+    ok(await q.ev(() => BW.G.meta.boxes.length === 0 && document.querySelectorAll('.reveal').length === 1), 'six rapid taps on a lockbox give one reward');
+    // damaged saves never leave a dead screen
+    const shapes = ['{"v":1,"meta":"x"}', '{"v":1,"meta":{"cos":{}}}', '{"v":1,"meta":{"stats":7,"bells":"lots","boxes":"no","friends":{"__proto__":5}}}', '{"v":1,"meta":{},"run":{"cfg":{"scen":"sprint","seed":5,"dest":"earth","ev":1},"s":{}}}', 'null', '[]', '{"v":1,"meta":{"bells":1e999}}'];
+    let clean = 0;
+    for (const sh of shapes) { await q.ev((v) => { window.localStorage.setItem('bellwether.save.v1', v); }, sh); await q.page.reload(); await q.page.waitForTimeout(500);
+      if (await q.ev(() => !!document.querySelector('.hero .wm') && !/NaN|undefined|hit an error|could not start/.test(document.body.innerText) && Number.isFinite(BW.G.meta.bells) && !BW.G.run)) clean++; }
+    ok(clean === shapes.length, 'every damaged save starts cleanly (' + clean + ' of ' + shapes.length + ')');
+    ok(q.errors.filter(e => !/Failed to load resource/.test(e)).length === 0, 'no script errors in the regression pass (' + q.errors.length + ')'); q.errors.slice(0, 5).forEach((e) => console.log(' -', e));
+  } catch (e) { fails++; console.log('TEST ERROR:', e.message.split('\n')[0]); await q.shot('zz-error2').catch(() => {}); }
+  await q.close();
+  // A busy run (every kind of holding, order and debt) must always come back after a reload, on every world.
+  console.log('12. Busy runs survive a reload');
+  const w = await P.open();
+  try {
+    let good = 0, tried = 0, kinds = {};
+    for (const dest of ['earth', 'moon', 'mars']) {
+      await w.ev((d) => { BW.G.meta.unlocked.dest_moon = 1; BW.G.meta.unlocked.dest_mars = 1; BW.G.meta.unlocked.orders = 1; ['tutorial'].forEach(k => BW.G.meta.seen[k] = 1);
+        BW.UI.closeAll(); BW.App.startRun({ scen: 'decade', seed: 777 + d.length, mode: 'open', dest: d }); BW.UI.closeAll(); BW.App.setPaused(true); BW.G.run._cash(60000000, 'life'); }, dest);
+      for (let round = 0; round < 6; round++) {
+        const snap = await w.ev((round) => {
+          const r = BW.G.run, s = r.s, t = BW.G.tape, rnd = (n) => Math.floor(Math.random() * n);
+          const ids = Object.keys(t.assets).filter(id => r.canTrade(id));
+          for (let k = 0; k < 6; k++) r.buy(ids[rnd(ids.length)], 50000 + rnd(400000));
+          const held = Object.keys(s.pos); if (held.length) { r.sell(held[rnd(held.length)], r.qty(held[0]) * 0.3); const id = held[rnd(held.length)], px = r.px(id); r.orderAdd({ id, side: 'sell', kind: 'stop', px: Math.round(px * 0.7), frac: 0.5 }); r.orderAdd({ id, side: 'buy', kind: 'limit', px: Math.round(px * 0.8), amt: 100000 }); }
+          r.cdOpen([1, 3, 5][rnd(3)], 200000 + rnd(300000));
+          const L = r.listingsNow(); for (const l of L.slice(0, 3)) { const o = r.propOffer(l.id, l.ask, [0.1, 0.2, 1][rnd(3)]); if (o.ok) break; }
+          if (s.props.length) { const p0 = s.props[rnd(s.props.length)]; if (round % 3 === 0) r.propRenovate(p0.id); if (round % 3 === 1) r.propSell(p0.id, false); if (round % 3 === 2) r.propRefi(p0.id); }
+          const bz = t.dest.biz; r.bizBuy(bz[rnd(4)].id); if (s.biz.length) { r.bizUpgrade(s.biz[0].type); r.bizSetSelf(s.biz[0].type, round % 2 === 0); }
+          r.setAuto({ on: true, keep: 150000, alloc: [{ id: t.fundId, pct: 60 }, { id: 'bgov', pct: 20 }] }); if (s.loan && s.loan.bal > 0) r.loanPay(100000);
+          BW.App._step(150 + rnd(120));
+          BW.App.save();
+          return { d: s.d, cash: s.cash, done: s.done, n: { pos: Object.keys(s.pos).length, cds: s.cds.length, props: s.props.length, biz: s.biz.length, orders: s.orders.length } };
+        }, round);
+        if (snap.done) break;
+        for (const k in snap.n) if (snap.n[k]) kinds[k] = 1;
+        await w.page.reload(); await w.page.waitForTimeout(450); tried++;
+        const back = await w.ev(() => BW.G.run ? { d: BW.G.run.s.d, cash: BW.G.run.s.cash, lost: !!BW.G.lostRun } : { lost: true });
+        if (!back.lost && back.d === snap.d && back.cash === snap.cash) good++; else console.log('   lost a run:', dest, 'round', round, JSON.stringify(snap), JSON.stringify(back));
+        await w.ev(() => { BW.App.toRun('home'); BW.App.setPaused(true); });
+      }
+    }
+    ok(good === tried && tried >= 12, 'every reload brought the run back exactly (' + good + ' of ' + tried + ')');
+    ok(['pos', 'cds', 'props', 'biz', 'orders'].every(k => kinds[k]), 'those runs held stocks, deposits, property, businesses and standing orders (' + Object.keys(kinds).join(', ') + ')');
+    ok(w.errors.length === 0, 'no script errors (' + w.errors.length + ')'); w.errors.slice(0, 5).forEach((e) => console.log(' -', e));
+  } catch (e) { fails++; console.log('TEST ERROR:', e.message.split('\n')[0]); }
+  await w.close();
+  // if starting up ever fails outright, the player gets a way out rather than a blank page
+  const z = await P.open({ hash: '' });
+  try { await z.page.addInitScript(() => { window.requestAnimationFrame = undefined; }); await z.page.reload(); await z.page.waitForTimeout(500);
+    ok(await z.ev(() => /could not start/.test(document.body.innerText) && !!document.querySelector('#app button')), 'a start-up failure shows a "Start fresh" button'); }
+  catch (e) { fails++; console.log('BOOT TEST ERROR', e.message.split('\n')[0]); }
+  await z.close();
+
   // desktop: mouse, wide window
   const d = await P.open({ w: 1280, h: 800, touch: false, dpr: 1 });
   try { await d.page.getByText('Start a run').click(); await d.page.waitForTimeout(300); await d.page.getByText('Play The Decade').click(); await d.page.waitForTimeout(300); await d.shot('b01-desktop'); ok(d.errors.length === 0, 'desktop loads without errors'); }

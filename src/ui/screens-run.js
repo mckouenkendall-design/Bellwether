@@ -68,7 +68,7 @@
     // coming up
     el.appendChild(h('h3', { text: 'Coming up' }));
     var up = h('div', { cls: 'card' });
-    up.appendChild(U.kvLive('Next paycheck', function () { var left = 20 - (r.rel() % 20); return 'in ' + left + ' day' + (left > 1 ? 's' : ''); }));
+    up.appendChild(U.kvLive(s.job.salary > 0 ? 'Next paycheck' : 'Next month\'s bills', function () { var left = 20 - (r.rel() % 20); return 'in ' + left + ' day' + (left > 1 ? 's' : '') + (s.job.salary > 0 && s.job.outUntil ? ' (benefits only)' : ''); }));
     up.appendChild(U.kvLive('Spare after bills each month', function () { var b = S.budget(); return f.mp(b.free); }));
     up.appendChild(U.kvLive(U.term('Interest on your cash', 'rate'), function () { return s.cash >= 0 ? G.tape.M.save[s.d].toFixed(2) + '% a year' : 'Card: 24% a year'; }));
     up.appendChild(h('button', { cls: 'kv', style: 'width:100%', tap: function () { S.autopilot(); } }, U.term('Auto-invest', 'auto'), h('span', { cls: 'brass', live: function () { return s.auto.on && s.auto.alloc.length ? 'On' : 'Off. Set up'; } })));
@@ -143,7 +143,7 @@
   function marketRow(a, back, st) {
     var r = G.run, s = r.s, cv = h('canvas', { cls: 'spark' }), lastD = -1;
     var ch = h('div', { cls: 'v2' });
-    U.on(function () { var d = s.d; var c = chg(a, d, back); ch.textContent = f.pp(c); ch.className = 'v2 ' + f.sign(c); if (lastD < 0 || d - lastD >= 5) { lastD = d; C.spark(cv, a.pc, Math.max(a.start, d - (back >= 240 ? 240 : 60)), d, 56, 30, c); } });
+    U.on(function () { var d = s.d; var c = chg(a, d, back); ch.textContent = f.pp(c); ch.className = 'v2 ' + f.signPct(c); if (lastD < 0 || d - lastD >= 5) { lastD = d; C.spark(cv, a.pc, Math.max(a.start, d - (back >= 240 ? 240 : 60)), d, 56, 30, c); } });
     var extra = '';
     if (st && prefs.msort === 'pe') extra = st.pe ? 'P/E ' + st.pe.toFixed(0) : 'No profit'; else if (st && prefs.msort === 'yield') extra = 'Pays ' + f.pct(st.yield); else if (st && prefs.msort === 'growth') extra = 'Sales ' + f.pp(st.growth, 0); else if (st && prefs.msort === 'debt') extra = st.debtToProfit == null ? (st.debt <= 0 ? 'No debt' : 'No profit') : 'Debt ' + st.debtToProfit.toFixed(1) + 'x';
     return h('button', { cls: 'item', tap: function () { S.asset(a.id); } }, U.logo(a),
@@ -171,7 +171,7 @@
         ctl.el.querySelector('.sh-head').insertBefore(star, ctl.el.querySelector('.sh-head .x'));
         // price
         var c1 = h('span', { cls: 'tag' }), c2 = h('span', { cls: 'tag' });
-        U.on(function () { var d = curD(), x = chg(a, d, 1), y = chg(a, d, 240); c1.textContent = 'Today ' + f.pp(x); c1.className = 'tag ' + f.sign(x); c2.textContent = 'Past year ' + f.pp(y); c2.className = 'tag ' + f.sign(y); });
+        U.on(function () { var d = curD(), x = chg(a, d, 1), y = chg(a, d, 240); c1.textContent = 'Today ' + f.pp(x); c1.className = 'tag ' + f.signPct(x); c2.textContent = 'Past year ' + f.pp(y); c2.className = 'tag ' + f.signPct(y); });
         b.appendChild(h('div', { cls: 'rowf', style: 'align-items:flex-end;flex-wrap:wrap' }, h('div', { cls: 'pxbig', live: function () { return f.px(a.pc[curD()]); } }), h('div', { cls: 'rowf', style: 'gap:6px;padding-bottom:5px' }, c1, c2)));
         b.appendChild(h('div', { cls: 'mute', style: 'font-size:13px;margin-top:2px', text: a.kind === 'stock' ? a.tkr + '  ' + secName(a.sector) : a.kind === 'cmdty' ? a.tkr + '  price per ' + a.unit : a.tkr + '  ' + KIND_NAME[a.kind] }));
         if (a.end >= 0 && a.end <= s.d) b.appendChild(h('p', { cls: 'note bad', style: 'margin-top:10px', text: a.endWhy === 'bankrupt' ? 'This company went bankrupt in ' + f.date(a.end - s.day0) + '. Its shares are worthless and no longer trade.' : 'This company was bought out in ' + f.date(a.end - s.day0) + ' at ' + f.px(a.endPx) + ' a share. It no longer trades.' }));
@@ -216,7 +216,7 @@
           card.appendChild(U.kvLive('You paid', function () { return f.money(r.posCost(id)); }));
           var g = h('span'); U.on(function () { var v = r.posValue(id), c = r.posCost(id); g.textContent = f.mp(v - c) + '  ' + f.pp(c ? (v - c) / c : 0); g.className = f.sign(v - c); });
           card.appendChild(h('div', { cls: 'kv' }, h('span', { text: 'Gain so far' }), g));
-          var al = h('span'); U.on(function () { var p = s.pme[id]; if (!p) return; var x = r.posValue(id) - p.u * M.tr[s.d]; al.textContent = f.mp(x); al.className = f.sign(x); });
+          var al = h('span'); U.on(function () { var p = s.pme[id]; if (!p) return; var x = r.posValue(id) - p.u * M.bench[s.d]; al.textContent = f.mp(x); al.className = f.sign(x); });
           card.appendChild(h('div', { cls: 'kv' }, U.term('Versus the index', 'pme'), al));
           host.appendChild(card);
         });
@@ -343,11 +343,11 @@
         var isBuy = st.side === 'buy', q = r.qty(id);
         if (App.tool('orders')) host.appendChild(U.seg([['market', 'Now'], ['limit', isBuy ? 'If it drops to' : 'If it rises to'], ['stop', isBuy ? 'If it rises to' : 'If it falls to']], function () { return st.kind; }, function (v) { st.kind = v; st.px = Math.round(a.pc[s.d] * (v === 'market' ? 1 : (isBuy ? (v === 'limit' ? 0.95 : 1.05) : (v === 'limit' ? 1.1 : 0.9)))); reg.render(); }));
         if (st.kind !== 'market') {
-          var pin = h('input', { id: 'tr-px', inputmode: 'decimal', value: (st.px / 100).toFixed(2), 'aria-label': 'Trigger price' });
-          pin.addEventListener('input', function () { st.px = Math.round(parseFloat(pin.value.replace(/[^0-9.]/g, '')) * 100) || 0; paint(); });
+          var pin = h('input', { id: 'tr-px', inputmode: 'decimal', maxlength: '14', value: (st.px / 100).toFixed(2), 'aria-label': 'Trigger price' });
+          pin.addEventListener('input', function () { st.px = U.parseMoney(pin.value); paint(); });
           host.appendChild(h('div', null, h('div', { cls: 'mute', style: 'font-size:12.5px;margin-bottom:4px' }, 'Trigger price. Now ', h('span', { live: function () { return f.px(a.pc[s.d]); } }), '. ', U.term(st.kind === 'limit' ? 'How limit orders work' : 'How stop orders work', st.kind)), h('label', { cls: 'amt' }, h('span', { text: '$' }), pin)));
         }
-        var input = h('input', { id: 'tr-amt', inputmode: 'decimal', placeholder: '0', 'aria-label': isBuy ? 'Dollars to spend' : 'Dollars to sell' });
+        var input = h('input', { id: 'tr-amt', inputmode: 'decimal', maxlength: '14', placeholder: '0', 'aria-label': isBuy ? 'Dollars to spend' : 'Dollars to sell' });
         host.appendChild(h('div', null, h('div', { cls: 'mute', style: 'font-size:12.5px;margin-bottom:4px', text: isBuy ? 'How much to spend' : 'How much to sell, in dollars' }), h('label', { cls: 'amt' }, h('span', { text: '$' }), input)));
         var info = h('div', { cls: 'card' });
         var go = h('button', { cls: 'btn ' + (isBuy ? 'buy' : 'sell') });
@@ -359,7 +359,7 @@
           } }));
         });
         host.appendChild(chipsEl); host.appendChild(info); host.appendChild(go);
-        input.addEventListener('input', function () { st.amt = Math.round(parseFloat(input.value.replace(/[^0-9.]/g, '')) * 100) || 0; st.frac = 0; paint(); });
+        input.addEventListener('input', function () { st.amt = U.parseMoney(input.value); st.frac = 0; paint(); });
         if (st.amt) input.value = (st.amt / 100).toFixed(2);
         var res = null;
         function sellQty() { if (st.frac >= 0.999) return 'all'; if (st.frac > 0) return r.qty(id) * st.frac; var v = r.posValue(id); return v > 0 ? (st.amt >= v ? 'all' : r.qty(id) * st.amt / v) : 0; }
@@ -374,7 +374,7 @@
             res = r.buy(id, st.amt, { dry: true });
             info.appendChild(U.kv('Price', f.px(px)));
             if (res.ok) { info.appendChild(U.kv('You get', f.qty(res.q) + (a.kind === 'cmdty' ? ' ' + a.unit + 's' : ' shares'))); info.appendChild(U.kv(U.term('Trading cost', 'fee'), f.money(res.fee))); info.appendChild(U.kv('Cash left', f.money(s.cash - res.total), 'total')); ok = true; }
-            else why = st.amt ? res.why : '';
+            else { why = st.amt ? res.why : ''; info.appendChild(U.kv('You get', '\u2013')); info.appendChild(U.kv(U.term('Trading cost', 'fee'), '\u2013')); info.appendChild(U.kv('Cash left', f.money(s.cash), 'total')); }
             go.textContent = 'Buy ' + (st.amt ? f.money(st.amt) + ' of ' : '') + a.tkr;
           } else {
             var qv = sellQty(); res = qv ? r.sell(id, qv, { dry: true }) : { ok: false, why: '' };
@@ -386,10 +386,10 @@
               info.appendChild(U.kv(U.term('Tax', 'tax'), res.tax ? f.money(res.tax) + (res.st > 0 && res.lt <= 0 ? ' at 22%' : res.lt > 0 && res.st <= 0 ? ' at 15%' : '') : (res.gain > 0 ? 'None: covered by banked losses' : 'None')));
               if (res.st > 0 && res.tax > 0) info.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin:6px 0', text: 'Some of this was bought under a year ago, so its gain is taxed at 22% instead of 15%.' }));
               info.appendChild(U.kv('You receive', f.money(res.net), 'total')); ok = true;
-            } else why = res.why;
+            } else { why = res.why; info.appendChild(U.kv('Selling', '\u2013')); info.appendChild(U.kv(U.term('Trading cost', 'fee'), '\u2013')); info.appendChild(U.kv('Your gain on these', '\u2013')); info.appendChild(U.kv(U.term('Tax', 'tax'), '\u2013')); info.appendChild(U.kv('You receive', '\u2013', 'total')); }
             go.textContent = 'Sell ' + a.tkr;
           }
-          if (why) info.appendChild(h('p', { cls: 'down', style: 'font-size:13.5px;margin-top:6px', text: why }));
+          info.appendChild(h('p', { cls: 'down', style: 'font-size:13.5px;margin-top:6px;min-height:19px', text: why || '' })); // the slot is always there, so the panel does not change height under your finger
           go.disabled = !ok;
         }
         paint();

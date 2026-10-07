@@ -159,7 +159,7 @@
       var inp = h('input', { cls: 'txt', id: 'res-code', placeholder: 'Paste the result code here', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Result code' });
       b.appendChild(h('div', { cls: 'stack' }, h('p', { cls: 'lead', text: 'Paste the whole message your friend sent. The code starts with R.' }), inp, h('button', { cls: 'btn pri', text: 'Add to scoreboard', tap: function () {
         var p = BW.parseResult(inp.value); if (!p.ok) { U.toast(p.why, { kind: 'bad' }); BW.Audio.play('error'); return; }
-        var rows = G.meta.friends[p.code] || (G.meta.friends[p.code] = []);
+        var rows = Array.isArray(G.meta.friends[p.code]) ? G.meta.friends[p.code] : (G.meta.friends[p.code] = []);
         if (!rows.some(function (x) { return x.name === p.name && x.score === p.score && x.attempt === p.attempt; })) rows.push({ name: p.name, score: p.score, dolly: p.dolly, attempt: p.attempt, bankrupt: p.bankrupt });
         App.saveSoon(); BW.Audio.play('unlock'); ctl.close(true); if (after) after(); else S.board(p.code); } })));
     } });
@@ -174,7 +174,7 @@
         else { var list = h('div', { cls: 'list', style: 'margin-top:12px' });
           rows.forEach(function (x, i) { var lead = x.dolly > 0 ? x.score / x.dolly - 1 : 0;
             list.appendChild(h('div', { cls: 'item' }, h('span', { cls: 'logo round', style: 'background:' + (i === 0 ? 'var(--brass);color:var(--brassInk)' : 'var(--bg3);color:var(--ink)'), text: String(i + 1) }),
-              h('span', { cls: 'grow' }, h('div', { cls: 't1', text: x.name + (x.me ? ' (you)' : '') }), h('div', { cls: 't2', text: (x.attempt > 1 ? 'Attempt ' + x.attempt + '. ' : 'First try. ') + (x.bankrupt ? 'Went bankrupt.' : '') })),
+              h('span', { cls: 'grow' }, h('div', { cls: 't1', text: x.me && x.name === 'You' ? 'You' : x.name + (x.me ? ' (you)' : '') }), h('div', { cls: 't2', text: (x.attempt > 1 ? 'Attempt ' + x.attempt + '. ' : 'First try. ') + (x.bankrupt ? 'Went bankrupt.' : '') })),
               h('span', { cls: 'right' }, h('div', { cls: 'v1', text: f.ms(x.score) }), h('div', { cls: 'v2 ' + f.sign(lead), text: f.pp(lead, 0) + ' vs Dolly' })))); });
           host.appendChild(list);
           host.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:8px', text: 'Dolly finished this market with ' + f.ms(rows[0].dolly) + '.' })); }
@@ -309,13 +309,16 @@
     var m = G.meta;
     if (!m.boxes.length) { host.appendChild(h('div', { cls: 'empty', text: 'No lockboxes waiting. Finish a run to earn one. The better you do against Dolly, the better the box.' })); return; }
     host.appendChild(h('p', { cls: 'lead', text: 'Tap a lockbox to open it.' }));
+    var opening = false;
     var wrap = h('div', { cls: 'grid3', style: 'margin-top:14px' });
     m.boxes.forEach(function (bx, i) {
       var tier = BW.BOX_TIERS[bx.tier], el = h('div', { cls: 'box', style: '--bc:' + BOXCOL[bx.tier] });
       wrap.appendChild(h('button', { cls: 'cell', style: 'min-height:130px', 'aria-label': 'Open ' + tier.name, tap: function () {
+        if (opening || bx.opened) return; opening = true; bx.opened = true;
         el.classList.add('shake'); BW.Audio.play('shake');
         setTimeout(function () {
-          m.boxes.splice(i, 1);
+          var at = m.boxes.indexOf(bx); if (at < 0) { opening = false; return; }
+          m.boxes.splice(at, 1);
           var out = BW.openBox(m, bx.tier, Math.random); App.saveSoon();
           BW.Audio.play('box', out.item.r); BW.Audio.buzz(out.item.r >= 3 ? [20, 40, 20, 40, 60] : 20);
           U.sheet({ title: tier.name, build: function (b2, ctl) {
@@ -352,9 +355,9 @@
 
   S.settings = function () {
     var m = G.meta, st = m.set;
-    U.sheet({ title: 'Settings', full: true, build: function (b) {
+    U.sheet({ title: 'Settings', full: true, onClose: function () { if (App.ui.hub) App.render(); }, build: function (b) {
       var name = h('input', { cls: 'txt', id: 'set-name', maxlength: '12', placeholder: 'Your name on scoreboards', value: m.name || '', autocomplete: 'off', 'aria-label': 'Your name' });
-      name.addEventListener('input', function () { m.name = name.value.replace(/[|]/g, '').slice(0, 12); App.saveSoon(); });
+      name.addEventListener('input', function () { m.name = BW.cleanName(name.value); App.saveSoon(); });
       b.appendChild(name);
       var sw = function (label, sub, key) { return U.switchRow(label, sub, function () { return st[key]; }, function (v) { st[key] = v; App.applyLook(); App.saveSoon(); }); };
       b.appendChild(h('h3', { text: 'Sound and feel' }));
@@ -375,7 +378,7 @@
   S.howto = function () {
     U.sheet({ title: 'How to play', full: true, build: function (b) {
       [['The goal', 'Finish the run with more money than Dolly. She gets the same pay, bills and surprises as you, and she only ever buys the index fund. Your score is what you would keep after selling everything and paying tax.'],
-        ['Time', 'A year passes in about a minute. Pause with the brass button, step a week at a time, or run at up to 8x. While a panel is open the clock waits.'],
+        ['Time', 'A year passes in about a minute. Pause with the brass button, step a week at a time, or run faster: up to 8x, and 16x once you unlock Fast Forward. While a panel is open the clock waits.'],
         ['Investing', 'Open the Market to buy stocks, funds, bonds and commodities. Tap anything to see its chart, its numbers and the news behind its moves. Dotted words explain themselves.'],
         ['The news', 'Stories are generated from what is really happening inside the simulated economy and companies. Some are facts, some are rumors, some are noise. Tap a story to see what the price did afterwards.'],
         ['Life', 'Your paycheck arrives monthly. Under Life you can pay down debt, lock money in deposits, buy and renovate property with a mortgage, and own businesses.'],
@@ -389,7 +392,9 @@
   function settle() {
     var m = G.meta, r = G.run, s = r.s, sc = G.scen, cfg = G.cfg;
     var res = BW.analyze(r, G.dolly, sc), played = res.years, full = !s.early;
-    var out = { res: res, bells: BW.bellsFor(res, sc, played, r.tape.dest), badges: [], cards: [], box: null, daily: 0 };
+    // A friend's code can take you to a place you have not unlocked yet. You can play it, but the richer payout waits until you have.
+    var destOpenNow = !r.tape.dest.cost || !!m.unlocked['dest_' + r.tape.dest.id];
+    var out = { res: res, bells: BW.bellsFor(res, sc, played, destOpenNow ? r.tape.dest : null), badges: [], cards: [], box: null, daily: 0 };
     m.stats.runs++; m.stats.years += played; if (res.ratio > 1 && full) m.stats.beats++;
     if (cfg.mode === 'daily' && !m.daily[cfg.date]) { m.stats.dailies = (m.stats.dailies || 0) + 1; out.daily = 8; }
     if (cfg.mode === 'daily' && (!m.daily[cfg.date] || res.score > m.daily[cfg.date].score)) m.daily[cfg.date] = { score: res.score, dolly: res.dolly, ratio: res.ratio };
@@ -402,7 +407,7 @@
     m.runs.unshift({ scen: sc.id, dest: cfg.dest, code: cfg.code, mode: cfg.mode, years: played, score: res.score, dolly: res.dolly, ratio: res.ratio, bells: out.total, t: Date.now(), bankrupt: s.bankrupt, early: !!s.early });
     if (m.runs.length > 40) m.runs.length = 40;
     if (full && (!m.best[sc.id] || res.ratio > m.best[sc.id])) m.best[sc.id] = res.ratio;
-    if (s.fair && full) { var rows = m.friends[cfg.code] || (m.friends[cfg.code] = []); rows.push({ name: m.name || 'You', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt, me: true }); }
+    if (s.fair && full) { var rows = Array.isArray(m.friends[cfg.code]) ? m.friends[cfg.code] : (m.friends[cfg.code] = []); rows.push({ name: m.name || 'You', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt, me: true }); }
     out.resultCode = s.fair && full ? BW.makeResult({ code: cfg.code, name: m.name || 'Anon', score: res.score, dolly: res.dolly, attempt: cfg.attempt || 1, bankrupt: s.bankrupt }) : null;
     G.resultsShown = true; G.lastOut = out;
     App.save();
@@ -435,12 +440,13 @@
 
       b.appendChild(h('h3', null, 'Where the gap came from, ', U.term('measured against the index', 'pme')));
       var rows = res.cats.filter(function (c) { return c.cat !== 'herd' || Math.abs(c.alpha) > 100; }).map(function (c) { return [c.label, c.alpha]; });
+      if (Math.abs(res.exit) >= 100) rows.push(['Tax and selling costs still to pay', res.exit]);
       rows.push(['Cash on the sidelines, debts, timing', res.idle]);
       var max = 1; rows.forEach(function (x) { max = Math.max(max, Math.abs(x[1])); });
       var bars = h('div', { cls: 'bars card' });
       rows.forEach(function (x) { var w = Math.min(50, 50 * Math.abs(x[1]) / max);
         bars.appendChild(h('div', { cls: 'bar' }, h('span', { text: x[0] }), h('span', { cls: 'num ' + f.sign(x[1]), style: 'font-weight:700', text: f.mp(x[1]) }), h('div', { cls: 'trk' }, h('i', { style: (x[1] >= 0 ? 'left:50%;' : 'right:50%;') + 'width:' + w + '%;background:var(' + (x[1] >= 0 ? '--up' : '--down') + ')' })))); });
-      bars.appendChild(h('div', { cls: 'kv total', style: 'margin-top:6px' }, h('span', { text: 'Your net worth minus Dolly\'s' }), h('span', { cls: f.sign(res.gap), text: f.mp(res.gap) })));
+      bars.appendChild(h('div', { cls: 'kv total', style: 'margin-top:6px' }, h('span', { text: 'Your walk-away value minus Dolly\'s' }), h('span', { cls: f.sign(res.gap), text: f.mp(res.gap) })));
       b.appendChild(bars);
       b.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'Each line asks: if every dollar you put there had gone into the ' + tape.dest.indexName + ' fund on the same day instead, how much more or less would you have now?' }));
 
@@ -476,6 +482,7 @@
       b.appendChild(h('h3', { text: 'What you earned' }));
       var rw = h('div', { cls: 'card stack' });
       rw.appendChild(h('div', { cls: 'rowf' }, h('span', { cls: 'grow', text: 'Bells for this run' }), h('span', { cls: 'bellcount', style: 'font-size:20px' }, bellIcon(), '+' + out.total)));
+      if (tape.dest.cost && !m.unlocked['dest_' + tape.dest.id]) rw.appendChild(h('p', { cls: 'mute', style: 'font-size:12.5px;margin-top:6px', text: 'You reached ' + tape.dest.name + ' on a friend\'s code. Runs there pay ' + Math.round((tape.dest.mult - 1) * 100) + '% more Bells once you unlock it yourself.' }));
       if (out.daily) rw.appendChild(h('div', { cls: 'mute', style: 'font-size:13px', text: 'Includes 8 for finishing today\'s Daily Tape.' }));
       if (res.years < 1) rw.appendChild(h('div', { cls: 'mute', style: 'font-size:13px', text: 'Runs shorter than a year earn nothing.' }));
       out.badges.forEach(function (bd) { rw.appendChild(h('div', { cls: 'rowf rar' + bd.r }, h('span', { cls: 'medal', html: U.icon('trophy') }), h('span', { cls: 'grow' }, h('div', { style: 'font-weight:700', text: bd.name }), h('div', { cls: 'mute', style: 'font-size:12.5px', text: bd.desc })), h('span', { cls: 'rar', text: '+' + BW.BADGE_BELLS[bd.r] }))); });

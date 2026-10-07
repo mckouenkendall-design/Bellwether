@@ -17,6 +17,22 @@
   function commas(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function fmtAxis(v) { var a = Math.abs(v); return a >= 1e9 ? trimZ((v / 1e9).toFixed(2)) + 'B' : a >= 1e6 ? trimZ((v / 1e6).toFixed(a >= 1e7 ? 1 : 2)) + 'M' : a >= 1e4 ? trimZ((v / 1e3).toFixed(a >= 1e5 ? 1 : 2)) + 'k' : a >= 1000 ? (v < 0 ? '-' : '') + commas(Math.round(a)) : a >= 100 ? Math.round(v).toString() : a >= 10 ? v.toFixed(1) : v.toFixed(2); }
   C.fmtAxis = fmtAxis;
+  // One unit and one number of decimals for a whole axis, chosen from its largest value and the gap between gridlines,
+  // so labels read 8k, 10k, 12k and never a mix like 8,000 and 10k.
+  function axisFmt(maxAbs, step, usd) {
+    var unit = maxAbs >= 1e9 ? [1e9, 'B'] : maxAbs >= 1e6 ? [1e6, 'M'] : maxAbs >= 1e4 ? [1e3, 'k'] : [1, ''];
+    var st = step / unit[0], dp = st >= 0.999 ? 0 : st >= 0.0999 ? 1 : st >= 0.00999 ? 2 : 3;
+    if (!unit[1] && maxAbs < 100 && dp < 1 && !usd) dp = 1;
+    return function (v) {
+      var a = Math.abs(v) / unit[0], t = a.toFixed(dp);
+      if (parseFloat(t) === 0) return usd ? '$0' : '0';
+      if (!unit[1] && a >= 1000) { var pr = t.split('.'); t = commas(pr[0]) + (pr[1] ? '.' + pr[1] : ''); }
+      return (v < 0 ? '-' : '') + (usd ? '$' : '') + t + unit[1];
+    };
+  }
+  C.axisFmt = axisFmt;
+  // keep a centred label inside the drawing area instead of letting the edge cut it in half
+  function textIn(g, txt, x, y, lo, hi) { var hw = g.measureText(txt).width / 2; g.fillText(txt, Math.max(lo + hw, Math.min(hi - hw, x)), y); }
   C.fmtUsd = function (v) { return Math.abs(v) < 0.005 ? '$0' : (v < 0 ? '-$' : '$') + fmtAxis(Math.abs(v)); };
   function bucketFor(range) { var b = range / 56; return b <= 1.2 ? 1 : b <= 6 ? 5 : b <= 24 ? 20 : b <= 70 ? 60 : b <= 140 ? 120 : 240; }
   function xLabel(rel, bucket, span) { var p = BW.dateParts(rel); if (rel < 0 && (bucket >= 20 || span > 300)) return Math.ceil(-rel / 240) + 'y before'; return bucket >= 60 || span > 700 ? 'Y' + p.year : bucket >= 5 ? p.mname + (span > 200 ? ' Y' + p.year : '') : p.mname + ' ' + p.day; }
@@ -55,9 +71,15 @@
       var data = build(), bars = data.bars, n = bars.length;
       if (!n) return;
       var padR = 50, padL = 14, padT = o.mode === 'candle' && w < 520 ? 42 : 22, volH = o.vol ? 34 : 0, padB = 32 + volH;
-      var pw = w - padL - padR, ph = H - padT - padB;
       var lo = 1e15, hi = -1, i, k;
       for (i = 0; i < n; i++) { if (bars[i].l < lo) lo = bars[i].l; if (bars[i].h > hi) hi = bars[i].h; }
+      // the widest price label decides how much room the right-hand gutter needs
+      g.font = '700 11px ' + css('--fT');
+      // (when the range is wide the chart uses a log scale with gridlines at 1, 2, 5, 10..., so the smallest gridline sets the decimals)
+      var wide = hi / Math.max(lo, 1) > 3.5;
+      var afP = axisFmt(hi / 100, wide ? Math.pow(10, Math.floor(Math.log10(Math.max(lo, 1) / 100))) : Math.max(0.01, niceStep((hi - lo) / 100 || 1, 4)));
+      padR = Math.max(50, Math.ceil(Math.max(g.measureText(afP(hi / 100)).width, g.measureText(afP(lo / 100)).width)) + 22);
+      var pw = w - padL - padR, ph = H - padT - padB;
       var line = o.mode === 'line';
       if (line) { lo = 1e15; hi = -1; for (i = 0; i < n; i++) { if (bars[i].c < lo) lo = bars[i].c; if (bars[i].c > hi) hi = bars[i].c; } }
       if (o.cost && o.cost > lo * 0.6 && o.cost < hi * 1.6) { lo = Math.min(lo, o.cost); hi = Math.max(hi, o.cost); }
@@ -75,11 +97,12 @@
       var ticks = [];
       if (log) { var steps = [1, 2, 5], e10 = Math.pow(10, Math.floor(Math.log10(lo))); for (k = 0; k < 12; k++) { var tv = steps[k % 3] * e10 * Math.pow(10, Math.floor(k / 3)); if (tv >= lo * 0.98 && tv <= hi * 1.02) ticks.push(tv); } if (ticks.length < 2) ticks = [lo, hi]; }
       else { var stp = niceStep(hi - lo || 1, 4); for (var tv2 = Math.ceil(lo / stp) * stp; tv2 <= hi; tv2 += stp) ticks.push(tv2); }
-      ticks.forEach(function (tv3) { var yy = Math.round(Y(tv3)) + 0.5; g.globalAlpha = 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; g.fillText(fmtAxis(tv3 / 100), w - padR + 8, yy); });
+      var yPill = Y(bars[n - 1].c); // the latest-price label sits here, so a gridline label this close would be hidden behind it
+      ticks.forEach(function (tv3) { var yy = Math.round(Y(tv3)) + 0.5; g.globalAlpha = 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; if (Math.abs(yy - yPill) >= 13) g.fillText(afP(tv3 / 100), w - padR + 8, yy); });
       // date labels
       g.textAlign = 'center';
       var every = Math.max(1, Math.round(n / (data.d1 - bars[0].d0 > 200 && data.d1 - bars[0].d0 <= 700 ? 3 : 4)));
-      for (i = Math.floor(every / 2); i < n; i += every) g.fillText(xLabel(bars[i].d0 - o.day0, data.b, data.d1 - bars[0].d0), X(i), H - volH - 9);
+      for (i = Math.floor(every / 2); i < n; i += every) textIn(g, xLabel(bars[i].d0 - o.day0, data.b, data.d1 - bars[0].d0), X(i), H - volH - 9, 2, w - padR);
       // volume
       if (o.vol) { var vmax = 0.001; for (i = 0; i < n; i++) vmax = Math.max(vmax, bars[i].v); g.globalAlpha = 0.5;
         for (i = 0; i < n; i++) { var vh = Math.max(1, bars[i].v / vmax * (volH - 6)); g.fillStyle = bars[i].c >= bars[i].o ? up : dn; g.fillRect(X(i) - slot * 0.32, H - vh - 2, Math.max(1, slot * 0.64), vh); } g.globalAlpha = 1; }
@@ -111,7 +134,7 @@
       if (o.cost) { var yc = Math.round(Y(o.cost)) + 0.5; if (yc > padT && yc < padT + ph) { g.strokeStyle = brass; g.setLineDash([2, 4]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(padL, yc); g.lineTo(w - padR, yc); g.stroke(); g.setLineDash([]); g.fillStyle = brass; g.textAlign = 'left'; g.fillText('you paid', padL + 2, yc - 8); } }
       // last price marker
       var last = bars[n - 1].c, yl = Y(last);
-      g.fillStyle = bars[n - 1].c >= bars[0].o ? up : dn; var lbl = fmtAxis(last / 100); g.textAlign = 'left';
+      g.fillStyle = bars[n - 1].c >= bars[0].o ? up : dn; var lbl = afP(last / 100); g.textAlign = 'left';
       var tw = g.measureText(lbl).width + 10; roundRect(g, w - padR + 4, yl - 9, tw, 18, 4); g.fill();
       g.fillStyle = css('--bg'); g.font = '700 11px ' + css('--fT'); g.fillText(lbl, w - padR + 9, yl + 0.5); g.font = '11px ' + css('--fT');
       // news pins
@@ -184,19 +207,23 @@
       if (n < 2) { g.fillStyle = css('--ink3'); g.font = '13px ' + css('--fT'); g.textAlign = 'center'; g.fillText(o.emptyText || 'The line appears as time passes.', w / 2, H / 2); return; }
       var i0 = o.from ? Math.max(0, o.from()) : 0, m = n - i0;
       if (m < 2) { i0 = Math.max(0, n - 2); m = n - i0; }
-      var padL = 14, padR = 50, padT = 22, padB = 20, pw = w - padL - padR, ph = H - padT - padB;
+      var padL = 14, padR = 50, padT = 22, padB = 20, pw, ph = H - padT - padB;
       var lo = 1e18, hi = -1e18, i, s, step = Math.max(1, Math.floor(m / 240));
       for (s = 0; s < o.series.length; s++) for (i = i0; i < n; i += step) { var v = o.series[s].get(i); if (v == null) continue; if (v < lo) lo = v; if (v > hi) hi = v; }
       for (s = 0; s < o.series.length; s++) { var vl = o.series[s].get(n - 1); if (vl != null) { if (vl < lo) lo = vl; if (vl > hi) hi = vl; } }
       if (o.zero) { if (lo > 0) lo = 0; if (hi < 0) hi = 0; }
       if (hi === lo) { hi += 1; lo -= 1; }
       var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
-      var Y = function (v2) { return padT + ph * (1 - (v2 - lo) / (hi - lo)); }, X = function (i2) { return padL + pw * (i2 - i0) / (m - 1); };
       g.font = '11px ' + css('--fT'); g.textBaseline = 'middle'; g.strokeStyle = css('--line'); g.fillStyle = css('--ink3'); g.lineWidth = 1; g.textAlign = 'left';
       var stp = niceStep(hi - lo, 4);
-      for (var tv = Math.ceil(lo / stp) * stp; tv <= hi; tv += stp) { var yy = Math.round(Y(tv)) + 0.5; g.globalAlpha = tv === 0 ? 1 : 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; g.fillText(o.fmt ? o.fmt(tv) : fmtAxis(tv), w - padR + 8, yy); }
+      var lab = o.fmt === C.fmtUsd ? axisFmt(Math.max(Math.abs(lo), Math.abs(hi)), stp, true) : o.fmt || fmtAxis, tv0;
+      for (tv0 = Math.ceil(lo / stp) * stp; tv0 <= hi; tv0 += stp) padR = Math.max(padR, Math.ceil(g.measureText(lab(tv0)).width) + 14);
+      pw = w - padL - padR;
+      var Y = function (v2) { return padT + ph * (1 - (v2 - lo) / (hi - lo)); }, X = function (i2) { return padL + pw * (i2 - i0) / (m - 1); };
+      for (var tv = Math.ceil(lo / stp) * stp; tv <= hi; tv += stp) { var yy = Math.round(Y(tv)) + 0.5; g.globalAlpha = tv === 0 ? 1 : 0.6; g.beginPath(); g.moveTo(padL, yy); g.lineTo(w - padR + 4, yy); g.stroke(); g.globalAlpha = 1; g.fillText(lab(tv), w - padR + 8, yy); }
       g.textAlign = 'center';
-      for (i = 0; i < 4; i++) { var ix = i0 + Math.round((m - 1) * (i + 0.5) / 4); g.fillText(o.x(ix), X(ix), H - 8); }
+      var seenX = {};
+      for (i = 0; i < 4; i++) { var ix = i0 + Math.round((m - 1) * (i + 0.5) / 4), xl = o.x(ix); if (seenX[xl]) continue; seenX[xl] = 1; textIn(g, xl, X(ix), H - 8, 2, w - padR); }
       for (s = 0; s < o.series.length; s++) {
         var se = o.series[s], col = css(se.color); g.beginPath(); var st2 = false;
         for (i = i0; i < n; i += step) { var v3 = se.get(i); if (v3 == null) continue; if (st2) g.lineTo(X(i), Y(v3)); else { g.moveTo(X(i), Y(v3)); st2 = true; } }
