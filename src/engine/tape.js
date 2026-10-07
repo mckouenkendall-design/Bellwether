@@ -56,9 +56,11 @@
     st.rate = clamp(Math.round((0.5 + st.infl + 0.5 * (st.infl - 2.2) + 0.5 * st.gap) * 4) / 4, 0.25, 8);
     st.rLong = st.rate * 0.5 + 1.45;
     var forced = (mods.force || []).map(function (f) { return { d: W + Math.round(f.y * DPY), reg: f.reg, depth: f.depth, bust: f.bust, done: false }; });
-    var inflPath = mods.inflBias || null;
-    function inflBias(ry) {
-      if (!inflPath) return 0;
+    var inflPath0 = mods.inflBias || null, sentPath = mods.sentPath || null;
+    function inflBias(ry) { return pathVal(inflPath0, ry); }
+    function pathVal(path, ry) {
+      if (!path) return 0;
+      var inflPath = path;
       if (ry <= inflPath[0][0]) return inflPath[0][1];
       for (var i = 1; i < inflPath.length; i++) if (ry <= inflPath[i][0]) {
         var a = inflPath[i - 1], b = inflPath[i];
@@ -235,7 +237,7 @@
       // ----- market mood
       var yrsIn = st.regDays / DPY;
       var sT = (regS === REG.EXP ? 0.03 : regS === REG.BOOM ? 0.1 + 0.13 * Math.min(1, (st.reg === REG.BOOM ? yrsIn : 0) / 1.5) : regS === REG.SLOW ? -0.06 :
-        regS === REG.REC ? -0.12 - 0.045 * (st.pend && st.pend.depth ? st.pend.depth : st.depth) : -0.1 + 0.12 * Math.min(1, (st.reg === REG.RECOV ? yrsIn : 0) / 1.2)) + (mods.sentAdd || 0);
+        regS === REG.REC ? -0.12 - 0.045 * (st.pend && st.pend.depth ? st.pend.depth : st.depth) : -0.1 + 0.12 * Math.min(1, (st.reg === REG.RECOV ? yrsIn : 0) / 1.2)) + (mods.sentAdd || 0) + pathVal(sentPath, ry);
       st.vsh *= 1 - 4 * DT;
       var volM = (1 + st.vsh) * (st.reg === REG.REC ? 1.45 : st.reg === REG.BOOM ? 0.85 : 1) * vm;
       var eps = rS.n();

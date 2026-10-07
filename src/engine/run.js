@@ -648,7 +648,8 @@
       if (nw > s.st.peakNW) s.st.peakNW = nw;
       if (s.st.peakNW > 0) { var ddn = nw / s.st.peakNW - 1; if (ddn < s.st.maxDD) s.st.maxDD = ddn; }
       var top = 0; for (id in s.pos) if (tape.assets[id].kind === 'stock') top = Math.max(top, this.posValue(id));
-      if (nw > 0 && top / nw > s.st.maxW) s.st.maxW = top / nw;
+      var gross = this.holdingsValue() + Math.max(0, s.cash) + this.cdTotal() + this.propEquity() + this.bizTotal();
+      if (gross > 500000 && top / gross > s.st.maxW) s.st.maxW = top / gross;
       if (M.dd[d] < -0.3 && this.holdingsValue() > 0.5 * nw && s.st.panicSells === 0) s.st.heldCrash = 1;
     }
     if (d >= s.endD) { s.done = true; this.ev.push({ t: 'done' }); }

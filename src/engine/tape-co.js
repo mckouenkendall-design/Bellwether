@@ -26,7 +26,7 @@
     var cos = [], active = [], poolLeft = ctx.dest.pool.slice(), slotsWaiting = [];
     var E = {};
 
-    function kBase(d) { return (0.5 * ctx.M.y10[d] + 0.5 * ctx.st.yAvg) / 100 + 0.047; }
+    function kBase(d) { return (0.5 * ctx.M.y10[d] + 0.5 * ctx.st.yAvg) / 100 + 0.056; }
 
     // What the market pays per dollar of yearly profit. It assumes growth fades the
     // way growth really does fade in this world, so no type of company is a free lunch.
@@ -100,7 +100,7 @@
         succ: clamp(0.78 + 0.28 * r.n(), 0.15, 1.3), bel: 0.72,
         g: tpl.g + 0.015 * r.n(), gBar: tpl.g, gLong: secDef.gLong + ctx.dest.growthAdd + 0.008 * r.n(),
         sg: 0.012 + 0.03 * Math.abs(tpl.g),
-        cyc: tpl.cyc, beta: tpl.beta, pay: tpl.pay, ci: tpl.ci, sr: tpl.sr, sm: tpl.sm, risk: ({ spec: -0.007, growth: -0.003, cyclical: 0, steady: 0.002, income: 0.003 })[tpl.arche] || 0, ex: tpl.ex,
+        cyc: tpl.cyc, beta: tpl.beta, pay: tpl.pay, ci: tpl.ci, sr: tpl.sr, sm: tpl.sm, risk: ({ spec: -0.01, growth: -0.008, cyclical: 0, steady: 0.002, income: 0.003 })[tpl.arche] || 0, ex: tpl.ex,
         su: 0.045 + 0.009 * tpl.beta,
         u: isIPO ? 0.16 : 0.1 * r.n(), rx: 0, hype: 0, hidR: 0, hidM: 0, post: 0,
         debt: 0, dRate: ctx.M.y10[Math.max(0, d - 1)] + 2, sh: 1, dps: 0, strain: 0, lev: 0, ev: 0, fv: 0,

@@ -15,25 +15,25 @@
   var BW = root.BW;
 
   var sectors = [
-    { id: 'tech', name: 'Technology', gLong: 0.055, hue: 215,
+    { id: 'tech', name: 'Technology', gLong: 0.042, hue: 215,
       moves: 'Grows fast when companies and shoppers are spending. Prices lean on profits far in the future, so rising interest rates hurt more than most.' },
-    { id: 'health', name: 'Healthcare', gLong: 0.042, hue: 340,
+    { id: 'health', name: 'Healthcare', gLong: 0.038, hue: 340,
       moves: 'People get sick in any economy, so sales hold up in recessions. Single events matter more here: drug trial results, patents running out, regulators.' },
     { id: 'energy', name: 'Energy', gLong: 0.022, hue: 28,
       moves: 'Profits follow the price of oil. When oil jumps, these win while most other sectors pay more.' },
-    { id: 'bank', name: 'Banking', gLong: 0.032, hue: 165,
+    { id: 'bank', name: 'Banking', gLong: 0.03, hue: 165,
       moves: 'Banks earn more when interest rates are higher, and lose badly in recessions when borrowers stop repaying. They run on borrowed money, so a crisis hits them first.' },
     { id: 'staples', name: 'Everyday Goods', gLong: 0.028, hue: 95,
       moves: 'Food, drinks, soap. People buy them in good times and bad, so profits are steady and growth is slow. Often held for the dividends.' },
-    { id: 'retail', name: 'Retail & Leisure', gLong: 0.036, hue: 300,
+    { id: 'retail', name: 'Retail & Leisure', gLong: 0.032, hue: 300,
       moves: 'Shopping, travel, eating out. The first spending people cut in a recession and the first to return in a recovery.' },
-    { id: 'indust', name: 'Industrials', gLong: 0.032, hue: 50,
+    { id: 'indust', name: 'Industrials', gLong: 0.03, hue: 50,
       moves: 'Machines, freight, aircraft parts. Orders follow the economy with a lag. Metal and fuel costs squeeze profits.' },
     { id: 'util', name: 'Utilities', gLong: 0.024, hue: 190,
       moves: 'Power and water. Very steady, heavy debt, big dividends. They trade a bit like bonds: when interest rates rise, their prices tend to fall.' },
-    { id: 'mater', name: 'Materials', gLong: 0.027, hue: 15,
+    { id: 'mater', name: 'Materials', gLong: 0.026, hue: 15,
       moves: 'Miners and makers of raw materials. Profits swing with metal prices and with how much the world is building.' },
-    { id: 'media', name: 'Telecom & Media', gLong: 0.027, hue: 265,
+    { id: 'media', name: 'Telecom & Media', gLong: 0.026, hue: 265,
       moves: 'Phone networks are steady and carry a lot of debt. Studios and ad businesses depend on hits and on how much companies spend on advertising.' }
   ];
 
