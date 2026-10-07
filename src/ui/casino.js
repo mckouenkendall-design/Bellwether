@@ -126,7 +126,7 @@
     }
     function start() {
       if (st.phase === 'play' || bet > s.cash || !stake(bet, 0.005)) return;
-      U.quiet(520, ctr);
+      U.quiet(450, ctr);
       st.hands = [{ cards: [draw(), draw()], bet: bet }]; st.dealer = [draw(), draw()]; st.cur = 0; st.phase = 'play'; st.msg = '';
       var pv = K.bjValue(st.hands[0].cards).total, dv = K.bjValue(st.dealer).total;
       if (pv === 21 || dv === 21) { st.natural = pv === 21; finish(true); return; }
@@ -144,7 +144,7 @@
       st.hands.forEach(function (x) { var pv = K.bjValue(x.cards).total, pBJ = x.cards.length === 2 && pv === 21 && !x.split; tot += x.bet;
         if (pv > 21) return; if (pBJ && !dBJ) { pay += Math.round(x.bet * 2.5); return; } if (dBJ && !pBJ) return;
         if (dv > 21 || pv > dv) pay += x.bet * 2; else if (pv === dv) pay += x.bet; });
-      payOut(tot, pay); U.quiet(520, ctr);
+      payOut(tot, pay); U.quiet(450, ctr);
       var net = pay - tot; st.phase = 'done';
       st.msg = net > 0 ? (pay === Math.round(tot * 2.5) && st.hands.length === 1 && st.hands[0].cards.length === 2 ? 'Blackjack! ' : 'You win ') + f.m0(net) : net === 0 ? 'Push. Your bet comes back.' : (dBJ ? 'Dealer has blackjack. ' : '') + 'You lose ' + f.m0(-net);
       BW.Audio.play(net > 0 ? 'good' : net === 0 ? 'tick' : 'bad'); paint();
@@ -252,7 +252,7 @@
       else { ctr.appendChild(betBar(paint)); var d = h('button', { cls: 'btn pri', text: 'Deal for ' + f.m0(bet), 'aria-label': 'Deal', tap: deal }); d.disabled = bet > s.cash; ctr.appendChild(d); }
     }
     function deal() { if (st.phase === 'hold' || bet > s.cash || !stake(bet, 0.0046)) return; st.deck = shoe(1); st.cards = [0, 1, 2, 3, 4].map(function () { BW.Audio.play('card'); return st.deck.pop(); }); st.held = [false, false, false, false, false]; st.stake = bet; st.phase = 'hold'; U.quiet(420, ctr); var r0 = K.pokerRank(st.cards); st.msg = r0 >= 0 ? 'You already have ' + K.PAYS[r0][0].toLowerCase() + '.' : ''; paint(); }
-    function drawStep() { st.cards = st.cards.map(function (c, i) { if (st.held[i]) return c; BW.Audio.play('card'); return st.deck.pop(); }); var rk = K.pokerRank(st.cards), pay = rk >= 0 ? st.stake * K.PAYS[rk][1] : 0; payOut(st.stake, pay); U.quiet(520, ctr); st.phase = 'bet'; st.held = [false, false, false, false, false];
+    function drawStep() { st.cards = st.cards.map(function (c, i) { if (st.held[i]) return c; BW.Audio.play('card'); return st.deck.pop(); }); var rk = K.pokerRank(st.cards), pay = rk >= 0 ? st.stake * K.PAYS[rk][1] : 0; payOut(st.stake, pay); U.quiet(450, ctr); st.phase = 'bet'; st.held = [false, false, false, false, false];
       st.msg = rk >= 0 ? K.PAYS[rk][0] + '. ' + (pay > st.stake ? 'You win ' + f.m0(pay - st.stake) : 'Your bet comes back.') : 'Nothing. You lose ' + f.m0(st.stake); BW.Audio.play(rk >= 0 ? (rk <= 3 ? 'jackpot' : rk === 8 ? 'tick' : 'good') : 'bad'); paint(); }
     paint();
   }

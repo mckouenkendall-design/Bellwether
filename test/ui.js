@@ -225,8 +225,9 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     // an ordinary double tap on Deal must not also press Hit
     let two = false;
     for (let k = 0; k < 8 && !two; k++) {
+      await q.page.waitForTimeout(650); // the table takes a breath after each hand, so wait it out before testing the double tap
       const loc = q.page.getByText('Deal for', { exact: false }).filter({ visible: true }).first(); const bb = await loc.boundingBox();
-      await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(150); await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(400);
+      await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(150); await q.page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.page.waitForTimeout(650);
       const st = await q.ev(() => { const b = [...document.querySelectorAll('button')].some(x => x.textContent === 'Stand' && x.offsetParent); return { play: b, cards: document.querySelectorAll('.felt > div:last-child .pcard').length }; });
       if (st.play) { two = true; ok(st.cards === 2, 'a double tap on Deal does not take a card (' + st.cards + ' cards in hand)'); await q.tapBtn('Stand'); }
     }
@@ -241,7 +242,7 @@ const SEEN = ['tutorial', 'x_stock', 'x_index', 'x_bond', 'x_cmdty', 'x_news', '
     await q.tapBtn('Blackjack'); await q.page.waitForTimeout(350);
     let hs = 0, hsOk = 0, bounce = 0, bounceOk = 0;
     for (let k = 0; k < 45 && (hs < 2 || bounce < 2); k++) {
-      await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(620);
+      await q.page.waitForTimeout(300); await q.tapText('Deal for', { exact: false }); await q.page.waitForTimeout(620);
       const live = async () => q.ev(() => { const b = [...document.querySelectorAll('button')].some(x => x.textContent === 'Stand' && x.offsetParent); const hands = document.querySelectorAll('.felt > div:last-child .hand'); return { play: b, cards: hands.length ? hands[0].querySelectorAll('.pcard').length : 0, total: +(/You: (\d+)/.exec(document.querySelector('.felt').innerText) || [0, 0])[1] }; });
       let st = await live(); if (!st.play) continue;
       if (st.total <= 11 && bounce <= hs && bounce < 2) { // two taps on Hit a tenth of a second apart are one press
